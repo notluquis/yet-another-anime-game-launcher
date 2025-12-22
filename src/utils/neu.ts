@@ -152,6 +152,15 @@ export async function getKeyOrDefault(
 }
 
 export async function setKey(key: string, value: string | null) {
+  if (value === null) {
+    // v6: use removeData to delete keys
+    try {
+      return await Neutralino.storage.removeData(key);
+    } catch {
+      // Key might not exist, which is fine
+      return;
+    }
+  }
   return await Neutralino.storage.setData(key, value);
 }
 

@@ -10,15 +10,23 @@ export async function createGithubEndpoint() {
       fastest = await Promise.race([
         ...END_POINTS.map(prefix =>
           fetch(`${prefix}https://api.github.com/octocat`)
-            .then(x => x.text())
-            .then(x => prefix)
-            .catch(() => timeout(15000))
+            .then(x => {
+              if (!x.ok) throw new Error(`HTTP ${x.status}`);
+              return x.text();
+            })
+            .then(() => prefix)
         ),
-        timeout(15000),
+        timeout(15000).then(() => {
+          throw new Error("Timeout");
+        }),
       ]);
       break;
-    } catch {
-      await log(`GitHub endpoint check failed (attempt ${i + 1}/3)`);
+    } catch (e) {
+      await log(`GitHub endpoint check failed (attempt ${i + 1}/3): ${e}`);
+      if (i < 2) {
+        // Wait a bit before retrying
+        await new Promise(r => setTimeout(r, 1000));
+      }
     }
   }
 

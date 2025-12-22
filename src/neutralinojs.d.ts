@@ -1145,6 +1145,17 @@ declare namespace Neutralino {
      * console.log(`Data: ${data}`);
      */
     function getData(key: string): Promise<string>;
+
+    /**
+     * Removes a data record from Neutralinojs storage (v6.4.0+).
+     * @param key Storage data record identifier.
+     */
+    function removeData(key: string): Promise<void>;
+
+    /**
+     * Clears all data from Neutralinojs storage (v6.4.0+).
+     */
+    function clear(): Promise<void>;
   }
   /**
    * `Neutralino.updater` namespace contains methods related to built-in automatic updater. Neutralinojs offers a built-in client-based updating mechanism. Therefore, you can update Neutralinojs apps without even calling third-party update services, operating system level services, or other binaries/scripts.
@@ -1489,6 +1500,12 @@ declare namespace Neutralino {
      * });
      */
     function create(url: string, options?: WindowOptions): Promise<ProcessInfo>;
+
+    /**
+     * Sets the application menu.
+     * @param menu Menu object.
+     */
+    function setMainMenu(menu: any): Promise<void>;
   }
 }
 

@@ -58,8 +58,8 @@ mkdir -p "$EXTERNAL/hkrpg/os/files"
 # for file in * ; do mv "$file" "$(basename $file | base64 )"."${file##*.}" ; done
 # popd
 
-curl -sSL https://github.com/3Shain/neutralinojs/releases/download/v4.11.0-1/neutralinojs-v4.11.0.zip > neu.zip
+curl -sSL https://github.com/neutralinojs/neutralinojs/releases/download/v6.4.0/neutralinojs-v6.4.0.zip > neu.zip
 unzip -o -d bin neu.zip
 rm neu.zip
 
-curl -sSL https://github.com/neutralinojs/neutralino.js/releases/download/v3.9.0/neutralino.js > neutralino.js
+curl -sSL https://github.com/neutralinojs/neutralino.js/releases/download/v6.4.0/neutralino.js > neutralino.js

@@ -29,6 +29,26 @@ import { createClient } from "./clients";
 export async function createApp() {
   await setKey("singleton", null);
 
+  // Restore native macOS menu (Cmd+Q support)
+  if (window.Neutralino) {
+    await Neutralino.window.setMainMenu([
+      {
+        id: "app",
+        text: "Application",
+        menuItems: [
+          { id: "quit", text: "Quit", action: "terminate:", shortcut: "q" },
+        ],
+      },
+    ]);
+
+    await Neutralino.events.on("mainMenuItemClicked", async evt => {
+      const detail = evt?.detail as { id: string } | undefined;
+      if (detail?.id === "quit") {
+        await Neutralino.app.exit();
+      }
+    });
+  }
+
   const aria2_port = 6868;
 
   await Neutralino.events.on("windowClose", async () => {
