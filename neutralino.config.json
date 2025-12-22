@@ -38,7 +38,8 @@
       "hidden": true,
       "resizable": false,
       "icon": "/src/icons/Paimon.cr.png",
-      "exitProcessOnClose": false
+      "exitProcessOnClose": false,
+      "useSavedState": false
     }
   },
   "cli": {
