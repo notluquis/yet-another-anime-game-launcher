@@ -1,43 +1,67 @@
 import { log, timeout } from "./utils";
 
-const END_POINTS = ["", "https://ghp.3shain.uk/"];
+// GitHub proxy mirrors - direct first, then proxies as fallback
+const END_POINTS = [
+  "", // Direct connection (preferred)
+  "https://ghp.3shain.uk/", // Original proxy
+  "https://gh-proxy.com/", // Alternative proxies
+  "https://ghfast.top/",
+  "https://gh.llkk.cc/",
+];
+
+// Cached result to avoid re-checking on subsequent calls
+let cachedEndpoint: string | null = null;
 
 export async function createGithubEndpoint() {
+  // Return cached result if available
+  if (cachedEndpoint !== null) {
+    await log(`Using cached github endpoint: ${cachedEndpoint || "direct"}`);
+    return createEndpointResult(cachedEndpoint);
+  }
+
   await log(`Checking github endpoints`);
-  let fastest = "";
-  for (let i = 0; i < 3; i++) {
+
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      fastest = await Promise.race([
-        ...END_POINTS.map(prefix =>
-          fetch(`${prefix}https://api.github.com/octocat`)
-            .then(x => {
-              if (!x.ok) throw new Error(`HTTP ${x.status}`);
-              return x.text();
-            })
-            .then(() => prefix)
+      // Race all endpoints - first successful response wins
+      // Failed fetches return never-resolving promise to not block the race
+      cachedEndpoint = (await Promise.race([
+        ...END_POINTS.map(
+          prefix =>
+            fetch(`${prefix}https://api.github.com/octocat`)
+              .then(x => {
+                if (!x.ok) throw new Error(`HTTP ${x.status}`);
+                return x.text();
+              })
+              .then(() => prefix)
+              .catch(() => new Promise(() => {})) // Never resolve on error
         ),
-        timeout(15000).then(() => {
+        timeout(10000).then(() => {
           throw new Error("Timeout");
         }),
-      ]);
+      ])) as string;
       break;
     } catch (e) {
-      await log(`GitHub endpoint check failed (attempt ${i + 1}/3): ${e}`);
-      if (i < 2) {
-        // Wait a bit before retrying
+      await log(
+        `GitHub endpoint check failed (attempt ${attempt + 1}/3): ${e}`
+      );
+      if (attempt < 2) {
         await new Promise(r => setTimeout(r, 1000));
       }
     }
   }
 
-  if (fastest === "") {
+  if (cachedEndpoint === null) {
     throw new Error("Failed to connect to GitHub after 3 attempts");
   }
 
-  fastest == "" || (await log(`Using github proxy ${fastest}`));
+  await log(`Using github endpoint: ${cachedEndpoint || "direct"}`);
+  return createEndpointResult(cachedEndpoint);
+}
 
+function createEndpointResult(prefix: string) {
   function api(path: `/${string}`): Promise<unknown> {
-    return fetch(`${fastest}https://api.github.com${path}`).then(x => {
+    return fetch(`${prefix}https://api.github.com${path}`).then(x => {
       if (x.status == 200 || x.status == 301 || x.status == 302) {
         return x.json();
       }
@@ -48,12 +72,13 @@ export async function createGithubEndpoint() {
   }
 
   function acceleratedPath(path: string) {
-    return `${fastest}${path}`;
+    return `${prefix}${path}`;
   }
 
   return {
     api,
     acceleratedPath,
+    mirrorURL: prefix, // Expose for aria2 downloads
   };
 }
 

@@ -222,12 +222,13 @@ export async function createSophonRetry(
   host: string,
   port: number
 ): Promise<Sophon> {
-  for (let i = 0; i < 10; i++) {
+  // Reduced delay from 3s to 1s for faster polling when server starts quickly
+  for (let i = 0; i < 20; i++) {
     try {
       return await createSophon(host, port);
     } catch (error) {
       log("Failed to create sophon client, retrying..." + error);
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
   throw new Error("Failed to create sophon client after retries");
