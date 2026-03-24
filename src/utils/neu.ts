@@ -7,9 +7,28 @@ let _basePath: string = "/";
 
 // Initialize synchronously using environment or fallback (called at module load time)
 function initializeBasePathSync(): string {
-  // Prefer NL_CWD (Neutralino current working directory) over NL_PATH
-  // NL_CWD is the directory where `neu run` was executed (project root in dev)
-  // NL_PATH is the app directory (yaaglwdos in `neu run --path=./yaaglwdos`)
+  // NL_PATH is the --path argument passed to the binary (e.g. yaaglwdos).
+  // NL_CWD is where `neu run` was executed (project root in dev).
+  // We want NL_PATH as the app's working directory, resolved against NL_CWD if relative.
+  try {
+    const nlPath = (globalThis as any).NL_PATH;
+    if (nlPath) {
+      if (nlPath.startsWith("/")) {
+        _basePath = nlPath;
+        return _basePath;
+      }
+      // NL_PATH is relative — resolve against NL_CWD
+      const nlCwd = (globalThis as any).NL_CWD;
+      if (nlCwd && nlCwd.startsWith("/")) {
+        _basePath = join(nlCwd, nlPath);
+        return _basePath;
+      }
+    }
+  } catch (e) {
+    // continue
+  }
+
+  // Fallback: use NL_CWD directly (production .app sets NL_PATH as absolute)
   try {
     const nlCwd = (globalThis as any).NL_CWD;
     if (nlCwd && nlCwd.startsWith("/")) {
@@ -18,24 +37,6 @@ function initializeBasePathSync(): string {
     }
   } catch (e) {
     // continue
-  }
-
-  // Fallback to NL_PATH if NL_CWD is not available/absolute
-  try {
-    const nlPath = (globalThis as any).NL_PATH;
-    if (nlPath) {
-      // NL_PATH might be relative, make it absolute
-      let basePath = nlPath;
-      if (!basePath.startsWith("/")) {
-        // If we have NL_CWD, make path relative to it
-        const nlCwd = (globalThis as any).NL_CWD || "/";
-        basePath = join(nlCwd, basePath);
-      }
-      _basePath = basePath;
-      return _basePath;
-    }
-  } catch (e) {
-    // continue to fallback
   }
 
   return _basePath;

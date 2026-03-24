@@ -8,40 +8,29 @@ if [ ! -f "./sidecar/hpatchz/hpatchz" ]; then
     exit 1
 fi
 
-echo "[+] Copying hpatchz to sophon_server/"
-cp ./sidecar/hpatchz/hpatchz ./sophon_server/hpatchz
-chmod +x ./sophon_server/hpatchz
-
+# Download protoc (needed by prost-build at Rust compile time)
+echo "[+] Downloading protoc..."
 curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-osx-universal_binary.zip > protobuf.zip
 unzip -o -j protobuf.zip bin/protoc -d bin
 rm protobuf.zip
+chmod +x bin/protoc
 
-pushd sophon_server
-../bin/protoc --python_out=. *.proto
+# Ensure Rust toolchain is available
+if ! command -v cargo &>/dev/null; then
+    echo "[+] Installing Rust via rustup..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    source "$HOME/.cargo/env"
+fi
 
-echo "[+] Installing dependencies..."
-uv python install 3.13.11
-uv sync --python 3.13
-
-echo "[+] Building with PyInstaller..."
-uv run --python 3.13 pyinstaller \
-  --onefile \
-  --name sophon-server \
-  --add-data "./hpatchz:." \
-  --hidden-import uvicorn.logging \
-  --hidden-import uvicorn.loops.auto \
-  --hidden-import uvicorn.loops.asyncio \
-  --hidden-import uvicorn.protocols.http.auto \
-  --hidden-import uvicorn.protocols.http.h11_impl \
-  --hidden-import uvicorn.protocols.websockets.auto \
-  --hidden-import uvicorn.protocols.websockets.websockets_impl \
-  --hidden-import uvicorn.lifespan.on \
-  --distpath ./dist \
-  --workpath ./build_temp \
-  server.py
-
-rm ./hpatchz
+echo "[+] Building Rust sophon-server..."
+pushd sophon-server-rs
+PROTOC="$(pwd)/../bin/protoc" cargo build --release
 popd
+
+echo "[+] Copying binary to dist..."
+mkdir -p sophon_server/dist
+cp sophon-server-rs/target/release/sophon-server sophon_server/dist/sophon-server
+chmod +x sophon_server/dist/sophon-server
 
 echo "[+] Build complete!"
 ls -lh ./sophon_server/dist/sophon-server

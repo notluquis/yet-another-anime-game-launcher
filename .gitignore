@@ -259,3 +259,9 @@ $RECYCLE.BIN/
 *.aria2
 *.magnet
 *.torrent
+
+# ==================================================
+# Rust (sophon-server-rs)
+# ==================================================
+sophon-server-rs/target/
+sophon-server-rs/Cargo.lock

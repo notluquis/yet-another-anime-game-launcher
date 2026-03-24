@@ -158,7 +158,7 @@ export function createCommonUpdateUI(
             >
               <div>
                 <div class="text-sm text-white/60 mb-3 font-semibold">
-                  {Math.round(progress())}%
+                  {progress() > 0 ? `${Math.round(progress())}%` : ""}
                 </div>
                 <Progress
                   value={progress()}

@@ -45,7 +45,7 @@ export const en: typeof zh_CN = {
 
   DECOMPRESS_FILE_PROGRESS: "Decompressing files",
   ALLOCATING_FILE: "Allocating files on disk",
-  DOWNLOADING_FILE_PROGRESS: "Downloading file: {0} ({2}/{3})",
+  DOWNLOADING_FILE_PROGRESS: "Downloading file: {0} ({2}/{3}) {1}/s",
 
   BACKUP_USER_DATA: "Backing up user data",
   RECOVER_BACKUP_USER_DATA: "Recovering backup",
