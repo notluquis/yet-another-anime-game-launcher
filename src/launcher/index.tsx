@@ -7,7 +7,9 @@ import {
 	IconButton,
 } from "../components/ui";
 import { Show, createSignal, Component, JSX } from "solid-js";
-import { Portal } from "solid-js/web";
+
+// Module-level signal to avoid reactive scope issues inside async component factory
+const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 import { Locale } from "@locale";
 import { createConfiguration } from "@config";
 import { Github } from "../github";
@@ -84,9 +86,9 @@ export async function createLauncher({
 		const [nonUrgentStatusText, nonUrgentProgress, nonUrgentProgramBusy] =
 			createTaskQueueState({ locale });
 
-		const [isOpen, setIsOpen] = createSignal(false);
-		const onOpen = () => setIsOpen(true);
-		const onClose = () => setIsOpen(false);
+		const isOpen = isSettingsOpen;
+		const onOpen = () => setIsSettingsOpen(true);
+		const onClose = () => setIsSettingsOpen(false);
 
 		const [videoLoaded, setVideoLoaded] = createSignal(false);
 
@@ -257,24 +259,25 @@ export async function createLauncher({
 						</div>
 					</div>
 				</DriveStatus>
-				<Show when={isOpen()}>
-					<Portal mount={document.body}>
-						<div
-							class="fixed inset-0 bg-black/50 z-40"
-							onClick={onClose}
-						/>
-						<div class="fixed inset-0 flex items-center justify-center z-50">
-							<ConfigurationUI
-								onClose={(action) => {
-									onClose();
-									if (action === "check-integrity") {
-										taskQueue.next(checkIntegrity);
-									}
-								}}
-							/>
-						</div>
-					</Portal>
-				</Show>
+				<div
+					class="fixed inset-0"
+					style={{ display: isOpen() ? "block" : "none", "z-index": 9998, background: "rgba(0,0,0,0.5)" }}
+					onClick={onClose}
+				/>
+				<div
+					class="fixed inset-0 flex items-center justify-center"
+					style={{ display: isOpen() ? "flex" : "none", "z-index": 9999 }}
+					onClick={(e) => e.stopPropagation()}
+				>
+					<ConfigurationUI
+						onClose={(action) => {
+							onClose();
+							if (action === "check-integrity") {
+								taskQueue.next(checkIntegrity);
+							}
+						}}
+					/>
+				</div>
 			</>
 		);
 	};

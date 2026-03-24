@@ -3,6 +3,7 @@ import { Checkbox as KobalteCheckbox } from "@kobalte/core/checkbox";
 import { Progress as KobalteProgress } from "@kobalte/core/progress";
 import { Toast as KobalteToast, toaster as kobalteToaster } from "@kobalte/core/toast";
 import { Component, JSX, splitProps } from "solid-js";
+import { Dynamic } from "solid-js/web";
 
 // Re-export Kobalte components directly
 export { Select } from "@kobalte/core/select";
@@ -404,10 +405,11 @@ export const Heading: Component<
     local.mr && (typeof local.mr === "number" ? `mr-[${local.mr}px]` : local.mr.replace("$", "mr-")),
   ].filter(Boolean).join(" ");
   
-  const Tag = local.level ? (`h${local.level}` as any) : "h2";
-  
+  const tag = local.level ? `h${local.level}` : "h2";
+
   return (
-    <Tag
+    <Dynamic
+      component={tag}
       class={`font-bold ${sizeClasses[local.size || "lg"]} ${marginClass} ${
         local.class || ""
       }`}
