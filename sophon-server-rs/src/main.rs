@@ -380,19 +380,90 @@ fn send_event(entry: &Arc<state::TaskEntry>, kind: &str, mut payload: serde_json
 }
 
 /// Watch `pid` and terminate this process when it disappears.
+///
+/// On macOS we use kqueue(2) + EVFILT_PROC/NOTE_EXIT, which watches the
+/// actual process object rather than just the numeric PID.  This is immune
+/// to PID reuse (the #1 failure mode of `kill -0` polling: the old PID gets
+/// recycled by a new process before the next poll, making the server believe
+/// the parent is still alive indefinitely).
+///
+/// On other platforms we fall back to 200 ms `kill -0` polling.
 async fn watch_pid(pid: u32) {
+    #[cfg(target_os = "macos")]
+    {
+        // Spawn a dedicated blocking thread for the kqueue wait so we do not
+        // block a Tokio worker thread.
+        let (tx, rx) = tokio::sync::oneshot::channel::<()>();
+        std::thread::spawn(move || {
+            if watch_pid_kqueue(pid) {
+                let _ = tx.send(());
+            }
+        });
+        // If kqueue setup fails the thread returns false and we never receive,
+        // so fall through to the polling fallback below.
+        if rx.await.is_ok() {
+            tracing::info!("Parent PID {pid} gone (kqueue) — shutting down");
+            std::process::exit(0);
+        }
+        // kqueue failed — fall through to polling
+    }
+
+    // Polling fallback (Linux / kqueue setup failure)
     let pid_str = pid.to_string();
     loop {
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-        // `kill -0 <pid>` returns non-zero if the process no longer exists.
         let alive = std::process::Command::new("kill")
             .args(["-0", &pid_str])
             .status()
             .map(|s| s.success())
             .unwrap_or(false);
         if !alive {
-            tracing::info!("Parent PID {pid} gone — shutting down");
+            tracing::info!("Parent PID {pid} gone (poll) — shutting down");
             std::process::exit(0);
+        }
+    }
+}
+
+/// macOS kqueue-based process-exit watcher.
+/// Returns `true` when the process exits, `false` if setup failed.
+#[cfg(target_os = "macos")]
+fn watch_pid_kqueue(pid: u32) -> bool {
+    use libc::{kevent, kqueue, EVFILT_PROC, EV_ADD, EV_ENABLE, NOTE_EXIT};
+    unsafe {
+        let kq = kqueue();
+        if kq < 0 {
+            return false;
+        }
+
+        let change = kevent {
+            ident: pid as libc::uintptr_t,
+            filter: EVFILT_PROC as i16,
+            flags: (EV_ADD | EV_ENABLE) as u16,
+            fflags: NOTE_EXIT,
+            data: 0,
+            udata: std::ptr::null_mut(),
+        };
+
+        // Register interest in the process-exit event.
+        let ret = kevent(kq, &change, 1, std::ptr::null_mut(), 0, std::ptr::null());
+        if ret < 0 {
+            libc::close(kq);
+            return false;
+        }
+
+        // Block until the event fires (no timeout — we want to wait forever).
+        let mut event: kevent = std::mem::zeroed();
+        loop {
+            let n = kevent(kq, std::ptr::null(), 0, &mut event, 1, std::ptr::null());
+            if n > 0 {
+                libc::close(kq);
+                return true;
+            }
+            // n == 0 → spurious wakeup, retry; n < 0 → error, bail
+            if n < 0 {
+                libc::close(kq);
+                return false;
+            }
         }
     }
 }

@@ -26,6 +26,7 @@ dashmap = "6"
 bytes = "1"
 regex = { version = "1", features = ["perf", "unicode", "perf-dfa-full"] }
 tempfile = "3"
+libc = "0.2"
 
 [build-dependencies]
 prost-build = "0.13"
