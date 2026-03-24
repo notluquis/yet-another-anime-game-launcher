@@ -2,10 +2,12 @@
 use anyhow::{Context, Result};
 use futures_util::{stream, StreamExt, TryStreamExt};
 use serde_json::json;
+use std::collections::HashSet;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
 };
+use tokio::io::AsyncWriteExt;
 
 use crate::downloader::{verify_md5, write_chunk};
 use crate::hoyo::{get_branch, get_build, ids_for, select_category};
@@ -150,13 +152,45 @@ pub async fn perform_install(
                     tokio::fs::create_dir_all(p).await?;
                 }
 
-                // Always start fresh — pre-allocating fills the file with zeros
-                // so any stale partial file from a previous interrupted run would
-                // pass the old size-equality check while containing garbage.
-                {
-                    let fh = std::fs::File::create(&tmp_assembled)
-                        .with_context(|| format!("create {}", tmp_assembled.display()))?;
-                    fh.set_len(file_info.size as u64)?;
+                // Sidecar file tracking which chunk indices have been written.
+                // Enables chunk-level resume: if interrupted, only missing chunks
+                // are re-downloaded on the next run.
+                let chunks_done_path = tmp_assembled.with_file_name(format!(
+                    "{}.chunks",
+                    tmp_assembled.file_name().unwrap_or_default().to_string_lossy()
+                ));
+
+                // Load resume state: valid only when both the assembled file AND
+                // the sidecar exist. Otherwise start fresh (truncate + pre-alloc).
+                let done_set: HashSet<usize> =
+                    if tmp_assembled.exists() && chunks_done_path.exists() {
+                        tokio::fs::read_to_string(&chunks_done_path).await
+                            .unwrap_or_default()
+                            .lines()
+                            .filter_map(|l| l.trim().parse().ok())
+                            .collect()
+                    } else {
+                        let fh = std::fs::File::create(&tmp_assembled)
+                            .with_context(|| format!("create {}", tmp_assembled.display()))?;
+                        fh.set_len(file_info.size as u64)?;
+                        tokio::fs::remove_file(&chunks_done_path).await.ok();
+                        HashSet::new()
+                    };
+
+                // Pre-credit already-downloaded chunks to the global counter so
+                // the overall progress bar starts at the correct position.
+                let pre_bytes: u64 = file_info.chunks.iter().enumerate()
+                    .filter(|(i, _)| done_set.contains(i))
+                    .map(|(_, c)| c.compressed_size as u64)
+                    .sum();
+                if pre_bytes > 0 {
+                    db.fetch_add(pre_bytes, Ordering::Relaxed);
+                    send(&entry, "file_download_resumed", json!({
+                        "filename": file_info.filename,
+                        "chunks_done": done_set.len(),
+                        "chunks_total": file_info.chunks.len(),
+                        "pre_downloaded_bytes": pre_bytes,
+                    }));
                 }
 
                 for (i, chunk) in file_info.chunks.iter().enumerate() {
@@ -164,60 +198,78 @@ pub async fn perform_install(
                         return Err(anyhow::anyhow!("cancelled"));
                     }
 
-                        let result = write_chunk(
-                            &http,
-                            &prefix,
-                            &chunk.chunk_id,
-                            chunk.compressed_size,
-                            chunk.offset,
-                            &tmp_assembled,
-                        )
-                        .await
-                        .with_context(|| format!("chunk {} of {}", i + 1, file_info.filename))?;
+                    // Skip chunks already written in a previous session.
+                    if done_set.contains(&i) {
+                        continue;
+                    }
 
-                        // Atomic add; compute running-average speed = total / elapsed.
-                        let cur = db.fetch_add(chunk.compressed_size as u64, Ordering::Relaxed)
-                            + chunk.compressed_size as u64;
-                        let elapsed = session_start.elapsed().as_secs_f64().max(0.001);
-                        let download_speed = cur as f64 / elapsed;
-                        // write_ms > 0 guard avoids division by zero on fast writes
-                        let write_speed = if result.write_ms > 0 {
-                            result.written as f64 / (result.write_ms as f64 / 1000.0)
-                        } else {
-                            result.written as f64 / 0.001
-                        };
+                    let result = write_chunk(
+                        &http,
+                        &prefix,
+                        &chunk.chunk_id,
+                        chunk.compressed_size,
+                        chunk.offset,
+                        &tmp_assembled,
+                    )
+                    .await
+                    .with_context(|| format!("chunk {} of {}", i + 1, file_info.filename))?;
 
-                        let percent = if file_info.size > 0 {
-                            (chunk.offset + result.written as u64) as f64 / file_info.size as f64 * 100.0
-                        } else {
-                            100.0
-                        };
+                    // Persist chunk index to the sidecar before updating the counter
+                    // so that a crash between the two leaves the sidecar correct.
+                    {
+                        let mut f = tokio::fs::OpenOptions::new()
+                            .create(true).append(true)
+                            .open(&chunks_done_path).await?;
+                        f.write_all(format!("{i}\n").as_bytes()).await?;
+                    }
 
-                        send(&entry, "chunk_progress", json!({
-                            "filename": file_info.filename,
-                            "total_chunks": file_info.chunks.len(),
-                            "current_chunk": i + 1,
-                            "progress_percent": percent,
-                            "current_byte": chunk.offset + result.written as u64,
-                            "total_bytes": file_info.size,
-                            "chunk_size": chunk.compressed_size,
-                            "download_ms": result.download_ms,
-                            "write_ms": result.write_ms,
-                            "overall_progress": {
-                                "downloaded_size": cur,
-                                "total_size": total_size,
-                                "overall_percent": cur as f64 / total_size.max(1) as f64 * 100.0,
-                                "download_speed": download_speed as u64,
-                                "write_speed": write_speed as u64,
-                            },
-                        }));
+                    // Atomic add; compute running-average speed = total / elapsed.
+                    let cur = db.fetch_add(chunk.compressed_size as u64, Ordering::Relaxed)
+                        + chunk.compressed_size as u64;
+                    let elapsed = session_start.elapsed().as_secs_f64().max(0.001);
+                    let download_speed = cur as f64 / elapsed;
+                    // write_ms > 0 guard avoids division by zero on fast writes
+                    let write_speed = if result.write_ms > 0 {
+                        result.written as f64 / (result.write_ms as f64 / 1000.0)
+                    } else {
+                        result.written as f64 / 0.001
+                    };
+
+                    let percent = if file_info.size > 0 {
+                        (chunk.offset + result.written as u64) as f64 / file_info.size as f64 * 100.0
+                    } else {
+                        100.0
+                    };
+
+                    send(&entry, "chunk_progress", json!({
+                        "filename": file_info.filename,
+                        "total_chunks": file_info.chunks.len(),
+                        "current_chunk": i + 1,
+                        "progress_percent": percent,
+                        "current_byte": chunk.offset + result.written as u64,
+                        "total_bytes": file_info.size,
+                        "chunk_size": chunk.compressed_size,
+                        "download_ms": result.download_ms,
+                        "write_ms": result.write_ms,
+                        "overall_progress": {
+                            "downloaded_size": cur,
+                            "total_size": total_size,
+                            "overall_percent": cur as f64 / total_size.max(1) as f64 * 100.0,
+                            "download_speed": download_speed as u64,
+                            "write_speed": write_speed as u64,
+                        },
+                    }));
                 }
 
-                // Verify MD5
+                // Verify MD5 — catches both download corruption and stale resumed files.
                 if !verify_md5(&tmp_assembled, &file_info.md5).await? {
                     tokio::fs::remove_file(&tmp_assembled).await.ok();
+                    tokio::fs::remove_file(&chunks_done_path).await.ok();
                     anyhow::bail!("MD5 mismatch for file: {}", file_info.filename);
                 }
+
+                // Sidecar no longer needed once the file is verified.
+                tokio::fs::remove_file(&chunks_done_path).await.ok();
 
                 // Move to game directory
                 if let Some(parent) = dest.parent() {

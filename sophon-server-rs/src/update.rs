@@ -2,12 +2,14 @@
 use anyhow::{Context, Result};
 use futures_util::{stream, StreamExt, TryStreamExt};
 use serde_json::json;
+use std::collections::HashSet;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
 };
+use tokio::io::AsyncWriteExt;
 
-use crate::downloader::{download_resumable, write_chunk};
+use crate::downloader::{download_resumable, verify_md5, write_chunk};
 use crate::hpatchz::apply_patch;
 use crate::hoyo::{get_branch, get_build, get_patch_build, ids_for, select_category};
 use crate::manifest::{
@@ -253,54 +255,94 @@ pub async fn perform_update(
 
                 send(&entry, "file_download_start", json!({ "filename": file_info.filename }));
 
-                let already_done = tokio::fs::metadata(&tmp_assembled)
-                    .await.map(|m| m.len() == file_info.size as u64).unwrap_or(false);
+                let chunks_done_path = tmp_assembled.with_file_name(format!(
+                    "{}.chunks",
+                    tmp_assembled.file_name().unwrap_or_default().to_string_lossy()
+                ));
 
-                if !already_done {
-                    {
+                // Load chunk-level resume state.
+                let done_set: HashSet<usize> =
+                    if tmp_assembled.exists() && chunks_done_path.exists() {
+                        tokio::fs::read_to_string(&chunks_done_path).await
+                            .unwrap_or_default()
+                            .lines()
+                            .filter_map(|l| l.trim().parse().ok())
+                            .collect()
+                    } else {
                         let fh = std::fs::File::create(&tmp_assembled)?;
                         fh.set_len(file_info.size as u64)?;
-                    }
-                    for (i, chunk) in file_info.chunks.iter().enumerate() {
-                        if entry.is_cancelled() {
-                            return Err(anyhow::anyhow!("cancelled"));
-                        }
+                        tokio::fs::remove_file(&chunks_done_path).await.ok();
+                        HashSet::new()
+                    };
 
-                        let result = write_chunk(
-                            &http, &prefix, &chunk.chunk_id,
-                            chunk.compressed_size, chunk.offset, &tmp_assembled,
-                        ).await?;
-
-                        let cur = db.fetch_add(chunk.compressed_size as u64, Ordering::Relaxed)
-                            + chunk.compressed_size as u64;
-                        let elapsed = session_start.elapsed().as_secs_f64().max(0.001);
-                        let download_speed = cur as f64 / elapsed;
-                        let write_speed = if result.write_ms > 0 {
-                            result.written as f64 / (result.write_ms as f64 / 1000.0)
-                        } else {
-                            result.written as f64 / 0.001
-                        };
-
-                        send(&entry, "chunk_progress", json!({
-                            "filename": file_info.filename,
-                            "total_chunks": file_info.chunks.len(),
-                            "current_chunk": i + 1,
-                            "progress_percent": (chunk.offset + result.written as u64) as f64 / file_info.size.max(1) as f64 * 100.0,
-                            "current_byte": chunk.offset + result.written as u64,
-                            "total_bytes": file_info.size,
-                            "chunk_size": chunk.compressed_size,
-                            "download_ms": result.download_ms,
-                            "write_ms": result.write_ms,
-                            "overall_progress": {
-                                "downloaded_size": cur,
-                                "total_size": new_total_size,
-                                "overall_percent": cur as f64 / new_total_size.max(1) as f64 * 100.0,
-                                "download_speed": download_speed as u64,
-                                "write_speed": write_speed as u64,
-                            },
-                        }));
-                    }
+                let pre_bytes: u64 = file_info.chunks.iter().enumerate()
+                    .filter(|(i, _)| done_set.contains(i))
+                    .map(|(_, c)| c.compressed_size as u64)
+                    .sum();
+                if pre_bytes > 0 {
+                    db.fetch_add(pre_bytes, Ordering::Relaxed);
                 }
+
+                for (i, chunk) in file_info.chunks.iter().enumerate() {
+                    if entry.is_cancelled() {
+                        return Err(anyhow::anyhow!("cancelled"));
+                    }
+
+                    if done_set.contains(&i) {
+                        continue;
+                    }
+
+                    let result = write_chunk(
+                        &http, &prefix, &chunk.chunk_id,
+                        chunk.compressed_size, chunk.offset, &tmp_assembled,
+                    ).await?;
+
+                    {
+                        let mut f = tokio::fs::OpenOptions::new()
+                            .create(true).append(true)
+                            .open(&chunks_done_path).await?;
+                        f.write_all(format!("{i}\n").as_bytes()).await?;
+                    }
+
+                    let cur = db.fetch_add(chunk.compressed_size as u64, Ordering::Relaxed)
+                        + chunk.compressed_size as u64;
+                    let elapsed = session_start.elapsed().as_secs_f64().max(0.001);
+                    let download_speed = cur as f64 / elapsed;
+                    let write_speed = if result.write_ms > 0 {
+                        result.written as f64 / (result.write_ms as f64 / 1000.0)
+                    } else {
+                        result.written as f64 / 0.001
+                    };
+
+                    send(&entry, "chunk_progress", json!({
+                        "filename": file_info.filename,
+                        "total_chunks": file_info.chunks.len(),
+                        "current_chunk": i + 1,
+                        "progress_percent": (chunk.offset + result.written as u64) as f64 / file_info.size.max(1) as f64 * 100.0,
+                        "current_byte": chunk.offset + result.written as u64,
+                        "total_bytes": file_info.size,
+                        "chunk_size": chunk.compressed_size,
+                        "download_ms": result.download_ms,
+                        "write_ms": result.write_ms,
+                        "overall_progress": {
+                            "downloaded_size": cur,
+                            "total_size": new_total_size,
+                            "overall_percent": cur as f64 / new_total_size.max(1) as f64 * 100.0,
+                            "download_speed": download_speed as u64,
+                            "write_speed": write_speed as u64,
+                        },
+                    }));
+                }
+
+                // Verify MD5 before moving — guards against both download corruption
+                // and stale resumed files with wrong content.
+                if !verify_md5(&tmp_assembled, &file_info.md5).await? {
+                    tokio::fs::remove_file(&tmp_assembled).await.ok();
+                    tokio::fs::remove_file(&chunks_done_path).await.ok();
+                    anyhow::bail!("MD5 mismatch for file: {}", file_info.filename);
+                }
+
+                tokio::fs::remove_file(&chunks_done_path).await.ok();
 
                 if let Some(parent) = dest.parent() {
                     tokio::fs::create_dir_all(parent).await?;
