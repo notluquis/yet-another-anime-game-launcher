@@ -11,7 +11,7 @@ export const ru_RU: typeof zh_CN = {
   PATCHING: "Патчим игровые файлы",
   GAME_RUNNING: "Игра запущена (НЕ ЗАКРЫВАЙТЕ ЛАУНЧЕР)",
   REVERT_PATCHING: "Откат патчей",
-  SCANNING_FILES: "Проверка целостности файлов игры. Завершенные файлы {0}/{1}",
+  SCANNING_FILES: "Проверка целостности файлов игры. Завершенные файлы {0}/{1}{2}",
   DOWNLOADING_ENVIRONMENT: "Загрузка файлов окружения",
   DOWNLOADING_ENVIRONMENT_SPEED: "Загрузка файлов окружения ({0}/s)",
   EXTRACT_ENVIRONMENT: "Распаковка окружения",

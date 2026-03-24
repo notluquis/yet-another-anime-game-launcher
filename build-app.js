@@ -5,39 +5,42 @@ import { rimraf } from 'rimraf';
 import { IconIcns } from '@shockpkg/icon-encoder';
 
 /**
- * Ensures Sophon server is built and up-to-date
- * Rebuilds if models.py is newer than the compiled binary
+ * Ensures Sophon server is built and up-to-date.
+ * Rebuilds if any .rs source file is newer than the compiled binary.
  */
 async function ensureSophonBuild() {
   const sophonDistPath = path.resolve(process.cwd(), 'sophon_server', 'dist', 'sophon-server');
-  const sophonModelsPath = path.resolve(process.cwd(), 'sophon_server', 'models.py');
-  const sophonBuildScript = path.resolve(process.cwd(), 'sophon_server', 'build-sophon.sh');
+  const rustSrcDir = path.resolve(process.cwd(), 'sophon-server-rs', 'src');
+  const buildScript = path.resolve(process.cwd(), 'build-sophon.sh');
 
-  // Check if build script exists
-  if (!fs.existsSync(sophonBuildScript)) {
-    throw new Error('Sophon build script not found: ' + sophonBuildScript);
+  if (!fs.existsSync(buildScript)) {
+    throw new Error('Sophon build script not found: ' + buildScript);
   }
 
-  // Check if rebuild is needed
+  // Rebuild if binary missing or any Rust source file is newer
   let needsRebuild = !fs.existsSync(sophonDistPath);
-  
-  if (!needsRebuild && fs.existsSync(sophonModelsPath)) {
-    const binaryStat = fs.statSync(sophonDistPath);
-    const modelsStat = fs.statSync(sophonModelsPath);
-    needsRebuild = modelsStat.mtime > binaryStat.mtime;
+
+  if (!needsRebuild && fs.existsSync(rustSrcDir)) {
+    const binaryMtime = fs.statSync(sophonDistPath).mtime;
+    const rsFiles = fs.readdirSync(rustSrcDir).filter(f => f.endsWith('.rs'));
+    for (const f of rsFiles) {
+      if (fs.statSync(path.join(rustSrcDir, f)).mtime > binaryMtime) {
+        needsRebuild = true;
+        break;
+      }
+    }
   }
 
   if (needsRebuild) {
     console.log('\n📦 Building Sophon server...');
     try {
-      await execa('bash', [sophonBuildScript], { cwd: path.resolve(process.cwd(), 'sophon_server'), stdio: 'inherit' });
+      await execa('bash', [buildScript], { cwd: process.cwd(), stdio: 'inherit' });
       console.log('✅ Sophon server built successfully\n');
     } catch (error) {
       throw new Error(`Failed to build Sophon server:\n${error.message}`);
     }
   }
 
-  // Verify binary exists after build
   if (!fs.existsSync(sophonDistPath)) {
     throw new Error('Sophon binary not found after build attempt: ' + sophonDistPath);
   }

@@ -12,7 +12,7 @@ export const vi_VN: typeof zh_CN = {
   GAME_RUNNING: "Đang chạy trò choi (VUI LÒNG KHÔNG ĐÓNG TRÌNH KHỞI ĐỘNG)",
   REVERT_PATCHING: "Đang hoàn tác bản vá",
   SCANNING_FILES:
-    "Kiểm tra tính toàn vẹn của tệp. {0}/{1} tệp đã được hoàn thành ",
+    "Kiểm tra tính toàn vẹn của tệp. {0}/{1} tệp đã được hoàn thành{2}",
   DOWNLOADING_ENVIRONMENT: "Đang tải tệp môi trường",
   DOWNLOADING_ENVIRONMENT_SPEED: "Đang tải xuống tệp môi trường ({0}/s)",
   EXTRACT_ENVIRONMENT: "Đang giải nén môi trường",

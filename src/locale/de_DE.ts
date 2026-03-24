@@ -12,7 +12,7 @@ export const de_DE: typeof zh_CN = {
   GAME_RUNNING: "Spiel läuft (SCHLIESSEN SIE DEN LAUNCHER NICHT)",
   REVERT_PATCHING: "Patches rückgängig machen",
   SCANNING_FILES:
-    "Überprüfe Integrität der Spieldateien. Abgeschlossene Dateien {0}/{1}",
+    "Überprüfe Integrität der Spieldateien. Abgeschlossene Dateien {0}/{1}{2}",
   DOWNLOADING_ENVIRONMENT: "Umgebungsdateien herunterladen",
   DOWNLOADING_ENVIRONMENT_SPEED: "Umgebungsdateien herunterladen ({0}/s)",
   EXTRACT_ENVIRONMENT: "Umgebung entpacken",

@@ -11,7 +11,7 @@ export const ko_KR: typeof zh_CN = {
   PATCHING: "게임 파일 패치 중",
   GAME_RUNNING: "게임이 실행 중입니다 (절대로 런처를 닫지 마세요)",
   REVERT_PATCHING: "패치 되돌리는 중",
-  SCANNING_FILES: "게임 파일 무결성 확인 중. {0}/{1}개 완료됨",
+  SCANNING_FILES: "게임 파일 무결성 확인 중. {0}/{1}개 완료됨{2}",
   DOWNLOADING_ENVIRONMENT: "실행 환경 다운로드 중",
   DOWNLOADING_ENVIRONMENT_SPEED: "실행 환경 다운로드 중 ({0}/s)",
   EXTRACT_ENVIRONMENT: "실행 환경 압축 해제 중",

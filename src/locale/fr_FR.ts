@@ -12,7 +12,7 @@ export const fr_FR: typeof zh_CN = {
   GAME_RUNNING: "Le jeu est lancé (NE FERMEZ PAS LE LANCEUR)",
   REVERT_PATCHING: "Réversion des correctifs",
   SCANNING_FILES:
-    "Vérification de l’intégrité des fichiers de jeu. Fichiers terminés {0}/{1}",
+    "Vérification de l’intégrité des fichiers de jeu. Fichiers terminés {0}/{1}{2}",
   DOWNLOADING_ENVIRONMENT: "Téléchargement des fichiers d'environnement",
   DOWNLOADING_ENVIRONMENT_SPEED:
     "Téléchargement des fichiers d'environnement ({0}/s)",

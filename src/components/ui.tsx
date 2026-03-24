@@ -262,7 +262,7 @@ export const ProgressIndicator: Component<{
       <KobalteProgress.Fill
         class={`h-full bg-primary-600 ${local.style === "transition: none;" ? "" : "transition-all"} ${
           local.striped
-            ? "bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600 bg-[length:200%_100%]"
+            ? "bg-linear-to-r from-primary-600 via-primary-500 to-primary-600 bg-size-[200%_100%]"
             : ""
         } ${
           local.animated ? "animate-[shimmer_2s_ease-in-out_infinite]" : ""
@@ -304,7 +304,7 @@ export const Checkbox: Component<{
       <KobalteCheckbox.Control
         class={`${
           sizeClasses[local.size || "md"]
-        } border-2 border-gray-300 rounded flex items-center justify-center peer-focus:ring-2 peer-focus:ring-primary-600 peer-focus:ring-offset-2 data-[checked]:bg-primary-600 data-[checked]:border-primary-600`}
+        } border-2 border-gray-300 rounded flex items-center justify-center peer-focus:ring-2 peer-focus:ring-primary-600 peer-focus:ring-offset-2 data-checked:bg-primary-600 data-checked:border-primary-600`}
       >
         <KobalteCheckbox.Indicator>
           <svg

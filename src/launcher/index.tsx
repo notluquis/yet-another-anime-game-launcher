@@ -1,13 +1,13 @@
-import { openDir, fatal, open, log } from "@utils";
+import { openDir, fatal, open } from "@utils";
 import {
-	Dialog,
 	Progress,
 	ProgressIndicator,
 	Button,
 	ButtonGroup,
 	IconButton,
 } from "../components/ui";
-import { Show, createSignal, Component, JSX, createEffect } from "solid-js";
+import { Show, createSignal, Component, JSX } from "solid-js";
+import { Portal } from "solid-js/web";
 import { Locale } from "@locale";
 import { createConfiguration } from "@config";
 import { Github } from "../github";
@@ -19,7 +19,7 @@ import { Wine } from "@wine";
 
 const IconSetting: Component<JSX.SvgSVGAttributes<SVGSVGElement>> = (props) => {
 	return (
-		<svg viewBox="0 0 1024 1024" fill="currentColor" {...props}>
+		<svg viewBox="0 0 1024 1024" fill="currentColor" width="24" height="24" {...props}>
 			<path
 				d="M396.72 320.592a141.184 141.184 0 0 1-99.824 15.92 277.648 277.648 0 0 0-45.344 74.576 141.216 141.216 0 0 1 37.52 95.952 141.248 141.248 0 0 1-41.728 100.32 274.4 274.4 0 0 0 49.952 86.224 141.264 141.264 0 0 1 107.168 14.176 141.216 141.216 0 0 1 63.984 79.296 274.72 274.72 0 0 0 86.816-1.92 141.248 141.248 0 0 1 66.016-86.304 141.216 141.216 0 0 1 101.856-15.488 277.648 277.648 0 0 0 41.92-76.544 141.184 141.184 0 0 1-36.128-94.4c0-34.912 12.768-67.68 34.816-92.96a274.736 274.736 0 0 0-38.192-70.032 141.264 141.264 0 0 1-105.792-14.56 141.312 141.312 0 0 1-67.168-90.912 274.4 274.4 0 0 0-92.784 0.016 141.152 141.152 0 0 1-63.088 76.64z m22.56-116.656c57.312-16 119.024-16.224 178.016 1.216a93.44 93.44 0 0 0 142.288 86.736 322.64 322.64 0 0 1 79.104 142.656 93.328 93.328 0 0 0-41.76 77.84 93.36 93.36 0 0 0 42.88 78.592 322.832 322.832 0 0 1-34.208 85.232 323.392 323.392 0 0 1-47.968 63.568 93.392 93.392 0 0 0-92.352 0.64 93.408 93.408 0 0 0-46.688 83.616 322.704 322.704 0 0 1-171.424 3.84 93.376 93.376 0 0 0-46.704-78.544 93.408 93.408 0 0 0-95.184 1.008A322.432 322.432 0 0 1 192 589.28a93.408 93.408 0 0 0 49.072-82.24c0-34.128-18.304-64-45.632-80.288a323.392 323.392 0 0 1 31.088-73.328 322.832 322.832 0 0 1 56.704-72.256 93.36 93.36 0 0 0 89.488-2.144 93.328 93.328 0 0 0 46.56-75.088z m92.208 385.28a68.864 68.864 0 1 0 0-137.76 68.864 68.864 0 0 0 0 137.76z m0 48a116.864 116.864 0 1 1 0-233.76 116.864 116.864 0 0 1 0 233.76z"
 				p-id="2766"
@@ -72,8 +72,6 @@ export async function createLauncher({
 	});
 
 	return function Launcher() {
-		// const bh = 40 / window.devicePixelRatio;
-		// const bw = 136 / window.devicePixelRatio;
 		const bh = 40;
 		const bw = 136;
 
@@ -82,261 +80,202 @@ export async function createLauncher({
 		);
 		taskQueue.next(() => init(config));
 
-		// const [
-		//   nonUrgentStatusText,
-		//   nonUrgentProgress,
-		//   nonUrgentProgramBusy,
-		//   nonUrgentTaskQueue,
-		// ] = createTaskQueueState({ locale });
 		// Unused queue
 		const [nonUrgentStatusText, nonUrgentProgress, nonUrgentProgramBusy] =
 			createTaskQueueState({ locale });
 
 		const [isOpen, setIsOpen] = createSignal(false);
-		const onOpen = () => {
-			log("[SETTINGS BTN] Opening settings dialog...").catch(() => {});
-			log(`[SETTINGS BTN] Current isOpen state: ${isOpen()}`).catch(() => {});
-			setIsOpen(true);
-			log("[SETTINGS BTN] isOpen set to true").catch(() => {});
-		};
-		const onClose = () => {
-			log("[SETTINGS BTN] Closing settings dialog...").catch(() => {});
-			setIsOpen(false);
-		};
+		const onOpen = () => setIsOpen(true);
+		const onClose = () => setIsOpen(false);
 
 		const [videoLoaded, setVideoLoaded] = createSignal(false);
 
-		// Debugging state for button visibility
-		const showSettingsDebug = () => {
-			const state = installState();
-			const show = state === "INSTALLED";
-			log(
-				`[DEBUG RENDER] InstallState: "${state}" | Show Settings Button: ${show}`,
-			).catch(() => {});
-			return show;
-		};
-
-		// Periodic logging of system state
-		let debugLogCounter = 0;
-		createEffect(() => {
-			// Trigger logging every time these values change
-			const _ = installState();
-			const __ = programBusy();
-			const ___ = updateRequired();
-			const ____ = isOpen();
-
-			debugLogCounter++;
-			if (debugLogCounter % 5 === 0) {
-				log(
-					`[STATE SNAPSHOT] installState: "${installState()}" | programBusy: ${programBusy()} | updateRequired: ${updateRequired()} | isOpen: ${isOpen()}`,
-				).catch(() => {});
-			}
-		});
+		const showSettings = () => installState() === "INSTALLED";
 
 		async function onButtonClick() {
+			if (programBusy()) return;
+
 			const state = installState();
-			const isBusy = programBusy();
-			log(
-				`[LAUNCH BTN] Click detected - InstallState: "${state}" | ProgramBusy: ${isBusy}`,
-			).catch(() => {});
-
-			if (isBusy) {
-				log("[LAUNCH BTN] Button ignored - program is busy").catch(() => {});
-				return;
-			}
-
 			if (state === "INSTALLED") {
 				if (updateRequired() === true) {
-					log("[LAUNCH BTN] Starting UPDATE task").catch(() => {});
 					taskQueue.next(update);
 				} else {
-					log("[LAUNCH BTN] Starting LAUNCH task").catch(() => {});
 					taskQueue.next(() => launch(config));
 				}
 			} else {
-				log("[LAUNCH BTN] Starting INSTALL task").catch(() => {});
 				const selection = await selectPath();
-				if (!selection) {
-					log("[LAUNCH BTN] No path selected, cancelling install").catch(
-						() => {},
-					);
-					return;
-				}
-				log(`[LAUNCH BTN] Install path selected: ${selection}`).catch(() => {});
+				if (!selection) return;
 				taskQueue.next(() => install(selection));
 			}
 		}
 
 		return (
-			<DriveStatus gamePath={installDir()} locale={locale}>
-				<div
-					class="background"
-					style={{
-						"background-image": background ? `url(${background})` : undefined,
-					}}
-				>
-					<Show when={background_video}>
-						<video
-							class="background-video"
-							src={background_video}
-							autoplay
-							loop
-							muted
-							playsinline
-							onLoadedData={() => setVideoLoaded(true)}
-							style={{
-								opacity: videoLoaded() ? 1 : 0,
-								transition: "opacity 0.5s ease-in",
-							}}
-						/>
-					</Show>
-					<Show when={background_theme}>
-						<div
-							class="background-theme"
-							style={{
-								"background-image": `url(${background_theme})`,
-								// HACK: always load video overlay image.
-								// Image seems to align with overlay. Fix for ZZZ not having text in image.
-							}}
-						/>
-					</Show>
-					{logo ? (
-						<div
-							class="game-logo"
-							style={{
-								"background-image": `url(${logo})`,
-								height: `${234}px`,
-								width: `${416}px`, //fixme: responsive size
-							}}
-						/>
-					) : null}
-					{iconImage ? (
-						<div
-							onClick={() => open(url)}
-							role="button"
-							class="version-icon"
-							style={{
-								"background-image": `url(${iconImage})`,
-								height: `${bh}px`,
-								width: `${bw}px`, //fixme: responsive size
-							}}
-						/>
-					) : null}
-					<div class="h-screen flex flex-col-reverse">
-						<div
-							class={`flex items-end gap-[10vw] mb-[50px] ${
-								launchButtonLocation == "left" ? "flex-row-reverse" : "flex-row"
-							}`}
-							style={{
-								"margin-right": "calc(10vw + 2px)",
-								"margin-left": "10vw",
-							}}
-						>
-							<div class="flex-1">
-								<Show when={nonUrgentProgramBusy()}>
-									<h3
-										style={
-											"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px"
-										}
-									>
-										{nonUrgentStatusText()}
-									</h3>
-									<Progress
-										value={nonUrgentProgress()}
-										indeterminate={nonUrgentProgress() === 0}
-										size="sm"
-										borderRadius={8}
-									>
-										<ProgressIndicator
-											style={"transition: none;"}
-											borderRadius={8}
-										></ProgressIndicator>
-									</Progress>
-								</Show>
-								<Show when={programBusy()}>
-									<h3
-										style={
-											"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px;"
-										}
-									>
-										{statusText()}
-									</h3>
-									<Progress
-										value={progress()}
-										indeterminate={progress() === 0}
-										size="sm"
-										borderRadius={8}
-									>
-										<ProgressIndicator
-											style={"transition: none;"}
-											borderRadius={8}
-										></ProgressIndicator>
-									</Progress>
-								</Show>
-								<Show when={!installState() && !programBusy()}>
-									<h3
-										style={
-											"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px;"
-										}
-									>
-										{locale.get("INITIALIZING_BACKEND")}
-									</h3>
-								</Show>
-							</div>
-							<ButtonGroup
-								class="launch-button"
-								size="xl"
-								attached
-								style={{ "min-width": "150px" }}
+			<>
+				<DriveStatus gamePath={installDir()} locale={locale}>
+					<div
+						class="background"
+						style={{
+							"background-image": background ? `url(${background})` : undefined,
+						}}
+					>
+						<Show when={background_video}>
+							<video
+								class="background-video"
+								src={background_video}
+								autoplay
+								loop
+								muted
+								playsinline
+								onLoadedData={() => setVideoLoaded(true)}
+								style={{
+									opacity: videoLoaded() ? 1 : 0,
+									transition: "opacity 0.5s ease-in",
+								}}
+							/>
+						</Show>
+						<Show when={background_theme}>
+							<div
+								class="background-theme"
+								style={{
+									"background-image": `url(${background_theme})`,
+									// HACK: always load video overlay image.
+									// Image seems to align with overlay. Fix for ZZZ not having text in image.
+								}}
+							/>
+						</Show>
+						{logo ? (
+							<div
+								class="game-logo"
+								style={{
+									"background-image": `url(${logo})`,
+									height: `${234}px`,
+									width: `${416}px`, //fixme: responsive size
+								}}
+							/>
+						) : null}
+						{iconImage ? (
+							<div
+								onClick={() => open(url)}
+								role="button"
+								class="version-icon"
+								style={{
+									"background-image": `url(${iconImage})`,
+									height: `${bh}px`,
+									width: `${bw}px`, //fixme: responsive size
+								}}
+							/>
+						) : null}
+						<div class="h-screen flex flex-col-reverse">
+							<div
+								class={`flex items-end gap-[10vw] mb-12.5 ${
+									launchButtonLocation == "left" ? "flex-row-reverse" : "flex-row"
+								}`}
+								style={{
+									"margin-right": "calc(10vw + 2px)",
+									"margin-left": "10vw",
+								}}
 							>
-								<Button
-									class="-mr-px"
-									disabled={programBusy()}
-									onClick={() => {
-										console.log("[MAIN BUTTON] Click event fired");
-										onButtonClick().catch(fatal);
-									}}
+								<div class="flex-1">
+									<Show when={nonUrgentProgramBusy()}>
+										<h3
+											style={
+												"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px"
+											}
+										>
+											{nonUrgentStatusText()}
+										</h3>
+										<Progress
+											value={nonUrgentProgress()}
+											indeterminate={nonUrgentProgress() === 0}
+											size="sm"
+											borderRadius={8}
+										>
+											<ProgressIndicator
+												style={"transition: none;"}
+												borderRadius={8}
+											></ProgressIndicator>
+										</Progress>
+									</Show>
+									<Show when={programBusy()}>
+										<h3
+											style={
+												"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px;"
+											}
+										>
+											{statusText()}
+										</h3>
+										<Progress
+											value={progress()}
+											indeterminate={progress() === 0}
+											size="sm"
+											borderRadius={8}
+										>
+											<ProgressIndicator
+												style={"transition: none;"}
+												borderRadius={8}
+											></ProgressIndicator>
+										</Progress>
+									</Show>
+									<Show when={!installState() && !programBusy()}>
+										<h3
+											style={
+												"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px;"
+											}
+										>
+											{locale.get("INITIALIZING_BACKEND")}
+										</h3>
+									</Show>
+								</div>
+								<ButtonGroup
+									class="launch-button"
+									size="xl"
+									attached
+									style={{ "min-width": "150px" }}
 								>
-									{installState() === "INSTALLED"
-										? updateRequired()
-											? locale.get("UPDATE")
-											: locale.get("LAUNCH")
-										: locale.get("INSTALL")}
-								</Button>
-								<Show when={showSettingsDebug()}>
-									<IconButton
-										onClick={() => {
-											console.log("[SETTINGS BUTTON] Click event fired");
-											onOpen();
-										}}
+									<Button
+										class="-mr-px"
 										disabled={programBusy()}
-										size="xl"
-										aria-label="Settings"
-										icon={<IconSetting style={{ "font-size": "30px" }} />}
-									/>
-								</Show>
-							</ButtonGroup>
-							<Dialog open={isOpen()} onOpenChange={setIsOpen}>
-								<Dialog.Portal>
-									<Dialog.Overlay class="fixed inset-0 bg-black/50 z-40" />
-									<div class="fixed inset-0 flex items-center justify-center z-50">
-										<Dialog.Content class="bg-white rounded-lg shadow-xl max-h-[90vh] overflow-auto">
-											<ConfigurationUI
-												onClose={(action) => {
-													onClose();
-													if (action === "check-integrity") {
-														taskQueue.next(checkIntegrity);
-													}
-												}}
-											/>
-										</Dialog.Content>
-									</div>
-								</Dialog.Portal>
-							</Dialog>
+										onClick={() => onButtonClick().catch(fatal)}
+									>
+										{installState() === "INSTALLED"
+											? updateRequired()
+												? locale.get("UPDATE")
+												: locale.get("LAUNCH")
+											: locale.get("INSTALL")}
+									</Button>
+									<Show when={showSettings()}>
+										<IconButton
+											onClick={onOpen}
+											disabled={programBusy()}
+											size="xl"
+											aria-label="Settings"
+											icon={<IconSetting style={{ "font-size": "30px" }} />}
+										/>
+									</Show>
+								</ButtonGroup>
+							</div>
 						</div>
 					</div>
-				</div>
-			</DriveStatus>
+				</DriveStatus>
+				<Show when={isOpen()}>
+					<Portal mount={document.body}>
+						<div
+							class="fixed inset-0 bg-black/50 z-40"
+							onClick={onClose}
+						/>
+						<div class="fixed inset-0 flex items-center justify-center z-50">
+							<ConfigurationUI
+								onClose={(action) => {
+									onClose();
+									if (action === "check-integrity") {
+										taskQueue.next(checkIntegrity);
+									}
+								}}
+							/>
+						</div>
+					</Portal>
+				</Show>
+			</>
 		);
 	};
 }

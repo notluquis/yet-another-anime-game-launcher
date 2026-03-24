@@ -42,11 +42,26 @@ async fn main() {
         .unwrap_or(8000);
     let host = std::env::var("SOPHON_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
 
-    // Watch a parent PID and exit when it dies.
+    // Watch parent PIDs and exit when they die.
+    //
+    // We watch two PIDs:
+    //  1. TERMINATE_WITH_PID (if set by the JS launcher) — intended to be the
+    //     Neutralino/launcher process PID.
+    //  2. The *actual* parent PID at startup (getppid) — reliable fallback in
+    //     case the JS passes an incorrect or recycled PID.  When Neutralino
+    //     exits, our immediate parent (the shell or native process that spawned
+    //     us) also exits, and sophon-server is reparented to launchd (PID 1).
+    //     Watching getppid() and exiting when it changes to 1 catches this.
     if let Ok(pid_str) = std::env::var("TERMINATE_WITH_PID") {
         if let Ok(pid) = pid_str.parse::<u32>() {
             tokio::spawn(watch_pid(pid));
         }
+    }
+    // Always watch the actual parent PID as a reliable safety net.
+    #[cfg(unix)]
+    {
+        let ppid = unsafe { libc::getppid() } as u32;
+        tokio::spawn(watch_pid(ppid));
     }
 
     let state = Arc::new(AppState::new());

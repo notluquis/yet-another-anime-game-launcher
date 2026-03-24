@@ -117,14 +117,14 @@ export async function createConfiguration({
               </button>
             </div>
             <Tabs orientation="vertical" class="h-full">
-              <Tabs.List class="flex flex-col min-w-[120px] border-r border-gray-200">
-                <Tabs.Trigger value="general" class="px-4 py-2 text-left hover:bg-gray-100 data-[selected]:bg-primary-100 data-[selected]:border-l-4 data-[selected]:border-primary-600">{locale.get("SETTING_GENERAL")}</Tabs.Trigger>
-                <Tabs.Trigger value="game" class="px-4 py-2 text-left hover:bg-gray-100 data-[selected]:bg-primary-100 data-[selected]:border-l-4 data-[selected]:border-primary-600">{locale.get("SETTING_GAME")}</Tabs.Trigger>
-                <Tabs.Trigger value="wine" class="px-4 py-2 text-left hover:bg-gray-100 data-[selected]:bg-primary-100 data-[selected]:border-l-4 data-[selected]:border-primary-600">Wine</Tabs.Trigger>
+              <Tabs.List class="flex flex-col min-w-30 border-r border-gray-200">
+                <Tabs.Trigger value="general" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_GENERAL")}</Tabs.Trigger>
+                <Tabs.Trigger value="game" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_GAME")}</Tabs.Trigger>
+                <Tabs.Trigger value="wine" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">Wine</Tabs.Trigger>
                 <Show when={advanceSetting()}>
-                  <Tabs.Trigger value="advanced" class="px-4 py-2 text-left hover:bg-gray-100 data-[selected]:bg-primary-100 data-[selected]:border-l-4 data-[selected]:border-primary-600">{locale.get("SETTING_ADVANCED")}</Tabs.Trigger>
+                  <Tabs.Trigger value="advanced" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_ADVANCED")}</Tabs.Trigger>
                 </Show>
-                <Tabs.Trigger value="licenses" class="px-4 py-2 text-left hover:bg-gray-100 data-[selected]:bg-primary-100 data-[selected]:border-l-4 data-[selected]:border-primary-600">{locale.get("SETTING_LICENSES")}</Tabs.Trigger>
+                <Tabs.Trigger value="licenses" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_LICENSES")}</Tabs.Trigger>
               </Tabs.List>
               <Tabs.Content value="general" class="flex-1 p-0">
                 <div class="flex gap-4 h-full">

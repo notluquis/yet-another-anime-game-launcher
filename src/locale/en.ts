@@ -10,7 +10,7 @@ export const en: typeof zh_CN = {
   PATCHING: "Patching game files",
   GAME_RUNNING: "Game is running (DO NOT CLOSE THE LAUNCHER)",
   REVERT_PATCHING: "Reverting patches",
-  SCANNING_FILES: "Checking game file integrity. Completed files {0}/{1}",
+  SCANNING_FILES: "Checking game file integrity. Completed files {0}/{1}{2}",
   DOWNLOADING_ENVIRONMENT: "Downloading environment files",
   DOWNLOADING_ENVIRONMENT_SPEED: "Downloading environment files ({0}/s)",
   EXTRACT_ENVIRONMENT: "Extracting environment",

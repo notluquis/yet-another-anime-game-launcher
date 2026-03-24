@@ -10,7 +10,7 @@ export const zh_CN = {
   PATCHING: "正在应用补丁",
   GAME_RUNNING: "游戏正在运行中（请勿关闭启动器）",
   REVERT_PATCHING: "正在还原补丁",
-  SCANNING_FILES: "确认游戏文件完整性中。正在扫描第{0}个文件，共{1}个",
+  SCANNING_FILES: "确认游戏文件完整性中。正在扫描第{0}个文件，共{1}个{2}",
   DOWNLOADING_ENVIRONMENT: "正在下载配置环境所需文件",
   DOWNLOADING_ENVIRONMENT_SPEED:
     "正在下载配置环境所需文件（当前速度: 每秒{0}）",

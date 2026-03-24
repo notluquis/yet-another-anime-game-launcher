@@ -11,7 +11,7 @@ export const th_TH: typeof zh_CN = {
   PATCHING: "กำลังแก้ไขไฟล์เกม",
   GAME_RUNNING: "เกมกำลังทำงาน (ห้ามปิดลันเชอร์เด็ดขาด)",
   REVERT_PATCHING: "กำลังย้อนคืนแพตช์",
-  SCANNING_FILES: "กำลังตรวจสอบความสมบูรณ์ของไฟล์เกม, สำเร็จไปแล้ว {0}/{1}",
+  SCANNING_FILES: "กำลังตรวจสอบความสมบูรณ์ของไฟล์เกม, สำเร็จไปแล้ว {0}/{1}{2}",
   DOWNLOADING_ENVIRONMENT: "กำลังดาวน์โหลดไฟล์ระบบ",
   DOWNLOADING_ENVIRONMENT_SPEED: "กำลังดาวน์โหลดไฟล์ระบบ ({0}/s)",
   EXTRACT_ENVIRONMENT: "กำลังแตกไฟล์ระบบ",

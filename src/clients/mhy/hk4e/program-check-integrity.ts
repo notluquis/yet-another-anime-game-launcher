@@ -1,7 +1,13 @@
-import { basename, join } from "path-browserify";
+import { basename } from "path-browserify";
 import { Sophon } from "@sophon";
 import { CommonUpdateProgram } from "@common-update-ui";
-import { log, md5, stats, readAllLines, setKey, humanFileSize } from "@utils";
+import { log, humanFileSize } from "@utils";
+
+function formatEta(secs: number): string {
+  if (secs < 60) return `${secs}s`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+  return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
+}
 
 export async function* checkIntegrityProgram({
   sophon,
@@ -13,25 +19,34 @@ export async function* checkIntegrityProgram({
   const taskId = await sophon.startRepair({
     gamedir: gameDir,
     game_type: "hk4e",
-    repair_mode: "reliable",
+    repair_mode: "smart",
   });
 
-  yield ["setStateText", "SCANNING_FILES", "0", "0"];
+  // Indeterminate bar while the server downloads the manifest
+  yield ["setUndeterminedProgress"];
+  yield ["setStateText", "SCANNING_FILES", "0", "...", ""];
 
   for await (const progress of sophon.streamOperationProgress(taskId)) {
     switch (progress.type) {
-      case "check_file":
+      // Manifest ready — update total so "0/..." becomes "0/2566"
+      case "repair_summary":
+        yield ["setStateText", "SCANNING_FILES", "0", String(progress.total_files), ""];
+        break;
+
+      case "check_file": {
+        const op = progress.overall_progress;
+        const etaStr =
+          op.eta_secs != null ? ` — ~${formatEta(Number(op.eta_secs))}` : "";
         yield [
           "setStateText",
           "SCANNING_FILES",
-          String(progress.overall_progress.checked_files),
-          String(progress.overall_progress.total_files),
+          String(op.checked_files),
+          String(op.total_files),
+          etaStr,
         ];
-        yield [
-          "setProgress",
-          Number(progress.overall_progress.overall_percent),
-        ];
+        yield ["setProgress", Number(op.overall_percent)];
         break;
+      }
 
       case "chunk_progress":
         log(`Chunk progress: ${progress.chunk_size} bytes downloaded`);

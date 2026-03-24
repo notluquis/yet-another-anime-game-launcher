@@ -12,7 +12,7 @@ export const es_ES: typeof zh_CN = {
   GAME_RUNNING: "El juego se está ejecutando (NO CIERRE LA APLICACIÓN)",
   REVERT_PATCHING: "Revirtiendo parches",
   SCANNING_FILES:
-    "Verificando integridad de archivos. Archivos revisados {0}/{1}",
+    "Verificando integridad de archivos. Archivos revisados {0}/{1}{2}",
   DOWNLOADING_ENVIRONMENT: "Descargando archivos de entorno",
   DOWNLOADING_ENVIRONMENT_SPEED: "Descargando archivos de entorno ({0}/s)",
   EXTRACT_ENVIRONMENT: "Extrayendo entorno",
