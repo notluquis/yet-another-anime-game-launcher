@@ -13,6 +13,12 @@ import { fatal, _safeRelaunch } from "./utils";
 import { Locale, LocaleTextKey } from "./locale";
 import { UPDATE_UI_IMAGE } from "./clients";
 
+function formatEta(secs: number): string {
+  if (secs < 60) return `${secs}s`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+  return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
+}
+
 export function createCommonUpdateUI(
   locale: Locale,
   program: () => CommonUpdateProgram
@@ -24,12 +30,26 @@ export function createCommonUpdateUI(
   return function CommonUpdateUI() {
     const [progress, setProgress] = createSignal(0);
     const [statusText, setStatusText] = createSignal("");
-    const [speedMetrics, setSpeedMetrics] = createSignal<{
+    const [downloadInfo, setDownloadInfo] = createSignal<{
+      filename: string;
+      downloaded: string;
+      total: string;
       networkSpeed: string;
       diskSpeed: string;
       isDiskBottleneck: boolean;
+      speedRaw: number;
+      downloadedRaw: number;
+      totalRaw: number;
     } | null>(null);
     const [done, setDone] = createSignal(false);
+
+    const eta = () => {
+      const info = downloadInfo();
+      if (!info || info.speedRaw <= 0 || info.totalRaw <= 0) return null;
+      const remaining = info.totalRaw - info.downloadedRaw;
+      if (remaining <= 0) return null;
+      return formatEta(Math.floor(remaining / info.speedRaw));
+    };
 
     onMount(() => {
       (async () => {
@@ -40,25 +60,25 @@ export function createCommonUpdateUI(
               break;
             case "setUndeterminedProgress":
               setProgress(0);
-              setSpeedMetrics(null);
+              setDownloadInfo(null);
               break;
             case "setStateText":
-              // Extract speed metrics if present (indices: 3=networkSpeed, 6=diskSpeed, 7=isDiskBottleneck)
               if (text[1] === "DOWNLOADING_FILE_PROGRESS" && text.length >= 8) {
-                const networkSpeed = text[3] as string;
-                const diskSpeed = text[6] as string;
-                const isDiskBottleneck = text[7] === "true";
-
-                setSpeedMetrics({
-                  networkSpeed,
-                  diskSpeed,
-                  isDiskBottleneck,
+                setDownloadInfo({
+                  filename: text[2] as string,
+                  downloaded: text[4] as string,
+                  total: text[5] as string,
+                  networkSpeed: text[3] as string,
+                  diskSpeed: text[6] as string,
+                  isDiskBottleneck: text[7] === "true",
+                  speedRaw: text.length > 8 ? Number(text[8]) : 0,
+                  downloadedRaw: text.length > 9 ? Number(text[9]) : 0,
+                  totalRaw: text.length > 10 ? Number(text[10]) : 0,
                 });
-                // Format with all 4 parameters: filename, netspeed, completed, total
-                setStatusText(locale.format(text[1], text.slice(2, 6)));
+                setStatusText(locale.get("DOWNLOADING"));
               } else {
                 setStatusText(locale.format(text[1], text.slice(2)));
-                setSpeedMetrics(null);
+                setDownloadInfo(null);
               }
               break;
           }
@@ -90,11 +110,11 @@ export function createCommonUpdateUI(
               100% { background-position: 0% 50%; }
             }
             @keyframes pulse-glow {
-              0%, 100% { 
+              0%, 100% {
                 opacity: 0.8;
                 filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.4));
               }
-              50% { 
+              50% {
                 opacity: 1;
                 filter: drop-shadow(0 0 30px rgba(59, 130, 246, 0.6));
               }
@@ -118,27 +138,61 @@ export function createCommonUpdateUI(
             </div>
           </Center>
 
-          {/* Status Text and Metrics */}
-          <div class="bg-gradient-to-r from-black/40 to-black/20 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-2xl">
-            <div style="text-align: center">
-              <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent mb-4 drop-shadow-lg">
-                {statusText()}
-              </h1>
-              
-              <Show when={speedMetrics()}>
-                {(metrics) => (
-                  <div style="margin-top: 1.5rem">
-                    <SpeedIndicator
-                      networkSpeed={metrics().networkSpeed}
-                      diskSpeed={metrics().diskSpeed}
-                      isDiskBottleneck={metrics().isDiskBottleneck}
-                      iconSize="md"
-                      class="justify-center"
-                    />
+          {/* Status Card */}
+          <div class="bg-gradient-to-r from-black/40 to-black/20 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-2xl">
+            <Show
+              when={downloadInfo()}
+              fallback={
+                <div style="text-align: center">
+                  <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-lg">
+                    {statusText()}
+                  </h1>
+                </div>
+              }
+            >
+              {(info) => (
+                <div>
+                  {/* Header row: status + ETA */}
+                  <div class="flex items-baseline justify-between mb-3">
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-lg">
+                      {statusText()}
+                    </h1>
+                    <Show when={eta()}>
+                      {(t) => (
+                        <span class="text-sm text-white/50 font-mono">
+                          ~{t()} remaining
+                        </span>
+                      )}
+                    </Show>
                   </div>
-                )}
-              </Show>
-            </div>
+
+                  {/* Filename */}
+                  <div
+                    class="text-xs text-white/40 truncate mb-3"
+                    title={info().filename}
+                  >
+                    {info().filename}
+                  </div>
+
+                  {/* Downloaded / Total */}
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm text-white/70 font-mono">
+                      {info().downloaded}
+                      <span class="text-white/40"> / {info().total}</span>
+                    </span>
+                  </div>
+
+                  {/* Speed indicators */}
+                  <SpeedIndicator
+                    networkSpeed={info().networkSpeed}
+                    diskSpeed={info().diskSpeed}
+                    isDiskBottleneck={info().isDiskBottleneck}
+                    iconSize="md"
+                    class="justify-center"
+                  />
+                </div>
+              )}
+            </Show>
           </div>
 
           {/* Progress Bar */}

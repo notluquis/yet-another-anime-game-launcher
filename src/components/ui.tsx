@@ -304,7 +304,7 @@ export const Checkbox: Component<{
       <KobalteCheckbox.Control
         class={`${
           sizeClasses[local.size || "md"]
-        } border-2 border-gray-300 rounded flex items-center justify-center peer-focus:ring-2 peer-focus:ring-primary-600 peer-focus:ring-offset-2 ui-checked:bg-primary-600 ui-checked:border-primary-600`}
+        } border-2 border-gray-300 rounded flex items-center justify-center peer-focus:ring-2 peer-focus:ring-primary-600 peer-focus:ring-offset-2 data-[checked]:bg-primary-600 data-[checked]:border-primary-600`}
       >
         <KobalteCheckbox.Indicator>
           <svg

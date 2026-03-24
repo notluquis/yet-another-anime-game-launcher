@@ -152,18 +152,12 @@ pub async fn perform_repair(
 
                 send(&entry, "file_download_start", json!({ "filename": file_info.filename }));
 
-                let already_done = tokio::fs::metadata(&tmp_assembled)
-                    .await
-                    .map(|m| m.len() == file_info.size as u64)
-                    .unwrap_or(false);
+                {
+                    let fh = std::fs::File::create(&tmp_assembled)?;
+                    fh.set_len(file_info.size as u64)?;
+                }
 
-                if !already_done {
-                    {
-                        let fh = std::fs::File::create(&tmp_assembled)?;
-                        fh.set_len(file_info.size as u64)?;
-                    }
-
-                    for (i, chunk) in file_info.chunks.iter().enumerate() {
+                for (i, chunk) in file_info.chunks.iter().enumerate() {
                         if entry.is_cancelled() {
                             return Err(anyhow::anyhow!("cancelled"));
                         }
@@ -202,7 +196,6 @@ pub async fn perform_repair(
                                 "write_speed": write_speed as u64,
                             },
                         }));
-                    }
                 }
 
                 if !verify_md5(&tmp_assembled, &file_info.md5).await? {

@@ -65,7 +65,7 @@ export default async function ({
             options={options}
             placeholder={locale.get("SETTING_FPS_UNLOCK_DEFAULT")}
             itemComponent={props => (
-              <Select.Item item={props.item} class="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-primary-50 ui-highlighted:bg-primary-100 rounded">
+              <Select.Item item={props.item} class="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-primary-50 data-[highlighted]:bg-primary-100 rounded">
                 <Select.ItemLabel>{options.find(opt => opt.value === props.item.rawValue)?.label}</Select.ItemLabel>
                 <Select.ItemIndicator class="inline-flex items-center">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

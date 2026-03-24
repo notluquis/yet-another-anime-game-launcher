@@ -383,7 +383,7 @@ fn send_event(entry: &Arc<state::TaskEntry>, kind: &str, mut payload: serde_json
 async fn watch_pid(pid: u32) {
     let pid_str = pid.to_string();
     loop {
-        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         // `kill -0 <pid>` returns non-zero if the process no longer exists.
         let alive = std::process::Command::new("kill")
             .args(["-0", &pid_str])

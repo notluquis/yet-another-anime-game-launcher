@@ -39,6 +39,15 @@ export async function* downloadAndInstallGameProgram({
           humanFileSize(progress.overall_progress.download_speed),
           humanFileSize(progress.overall_progress.downloaded_size),
           humanFileSize(progress.overall_progress.total_size),
+          humanFileSize(progress.overall_progress.write_speed ?? 0),
+          String(
+            (progress.overall_progress.write_speed ?? 0) > 0 &&
+            (progress.overall_progress.write_speed ?? 0) <
+              progress.overall_progress.download_speed
+          ),
+          String(progress.overall_progress.download_speed),
+          String(progress.overall_progress.downloaded_size),
+          String(progress.overall_progress.total_size),
         ];
 
         yield [

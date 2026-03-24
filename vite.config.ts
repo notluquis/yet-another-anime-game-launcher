@@ -1,29 +1,36 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 import solidPlugin from "vite-plugin-solid";
-import tsconfigPaths from "vite-tsconfig-paths";
+import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [tsconfigPaths(), {
-    name: "channel-client switcher",
-    load:  (id) => {
-      if(id.endsWith("/src/clients/index.ts")) {
-        const cc = process.env["YAAGL_CHANNEL_CLIENT"] ?? "hk4ecn";
-        console.info(`Building channel client ${cc}`);
-        return `export * from './${cc}'`;
-      }
-      return null;
-    }
-  }, solidPlugin()],
+  resolve: {
+    tsconfigPaths: true,
+  },
+  plugins: [
+    tailwindcss(),
+    {
+      name: "channel-client switcher",
+      load: (id) => {
+        if (id.endsWith("/src/clients/index.ts")) {
+          const cc = process.env["YAAGL_CHANNEL_CLIENT"] ?? "hk4ecn";
+          console.info(`Building channel client ${cc}`);
+          return { code: `export * from './${cc}'`, moduleType: "js" };
+        }
+        return null;
+      },
+    },
+    solidPlugin(),
+  ],
 
   envPrefix: ["VITE_", "YAAGL_"],
   build: {
-    target: "safari13",
+    target: "esnext",
     minify: true,
     sourcemap: false,
     outDir: "dist",
-    rollupOptions: {},
+    rolldownOptions: {},
   },
   test: {
     include: ["src/**/*.spec.ts"],

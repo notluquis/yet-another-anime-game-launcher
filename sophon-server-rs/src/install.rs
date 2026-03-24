@@ -150,23 +150,19 @@ pub async fn perform_install(
                     tokio::fs::create_dir_all(p).await?;
                 }
 
-                let already_done = tokio::fs::metadata(&tmp_assembled)
-                    .await
-                    .map(|m| m.len() == file_info.size as u64)
-                    .unwrap_or(false);
+                // Always start fresh — pre-allocating fills the file with zeros
+                // so any stale partial file from a previous interrupted run would
+                // pass the old size-equality check while containing garbage.
+                {
+                    let fh = std::fs::File::create(&tmp_assembled)
+                        .with_context(|| format!("create {}", tmp_assembled.display()))?;
+                    fh.set_len(file_info.size as u64)?;
+                }
 
-                if !already_done {
-                    // Pre-allocate the assembled file
-                    {
-                        let fh = std::fs::File::create(&tmp_assembled)
-                            .with_context(|| format!("create {}", tmp_assembled.display()))?;
-                        fh.set_len(file_info.size as u64)?;
+                for (i, chunk) in file_info.chunks.iter().enumerate() {
+                    if entry.is_cancelled() {
+                        return Err(anyhow::anyhow!("cancelled"));
                     }
-
-                    for (i, chunk) in file_info.chunks.iter().enumerate() {
-                        if entry.is_cancelled() {
-                            return Err(anyhow::anyhow!("cancelled"));
-                        }
 
                         let result = write_chunk(
                             &http,
@@ -215,7 +211,6 @@ pub async fn perform_install(
                                 "write_speed": write_speed as u64,
                             },
                         }));
-                    }
                 }
 
                 // Verify MD5

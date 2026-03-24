@@ -57,6 +57,11 @@ async function* downloadAndPatch(
         humanFileSize(Number(progress.downloadSpeed)),
         humanFileSize(Number(progress.completedLength)),
         humanFileSize(Number(progress.totalLength)),
+        humanFileSize(Number(progress.diskWriteSpeed)),
+        progress.isDiskBottleneck ? "true" : "false",
+        String(Number(progress.downloadSpeed)),
+        String(Number(progress.completedLength)),
+        String(Number(progress.totalLength)),
       ];
       yield [
         "setProgress",
@@ -188,6 +193,11 @@ async function* predownload(
       humanFileSize(Number(progress.downloadSpeed)),
       humanFileSize(Number(progress.completedLength)),
       humanFileSize(Number(progress.totalLength)),
+      humanFileSize(Number(progress.diskWriteSpeed)),
+      progress.isDiskBottleneck ? "true" : "false",
+      String(Number(progress.downloadSpeed)),
+      String(Number(progress.completedLength)),
+      String(Number(progress.totalLength)),
     ];
     yield [
       "setProgress",
