@@ -104,10 +104,10 @@ export async function createConfiguration({
     }) {
       return (
         <div class="bg-white rounded-lg shadow-xl" style={{ height: "570px", width: "1000px", "max-width": "1000px" }}>
-          <div class="p-6">
+          <div class="p-6 flex flex-col h-full">
             <div class="flex justify-between items-center mb-4">
               <Heading size="lg">{locale.get("SETTING")}</Heading>
-              <button 
+              <button
                 onClick={() => props.onClose("close")}
                 class="text-gray-400 hover:text-gray-600"
               >
@@ -116,8 +116,8 @@ export async function createConfiguration({
                 </svg>
               </button>
             </div>
-            <Tabs orientation="vertical" class="h-full">
-              <Tabs.List class="flex flex-col min-w-30 border-r border-gray-200">
+            <Tabs orientation="vertical" class="flex flex-1 overflow-hidden">
+              <Tabs.List class="flex flex-col min-w-30 border-r border-gray-200 shrink-0 pr-2">
                 <Tabs.Trigger value="general" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_GENERAL")}</Tabs.Trigger>
                 <Tabs.Trigger value="game" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_GAME")}</Tabs.Trigger>
                 <Tabs.Trigger value="wine" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">Wine</Tabs.Trigger>
@@ -126,7 +126,7 @@ export async function createConfiguration({
                 </Show>
                 <Tabs.Trigger value="licenses" class="px-4 py-2 text-left hover:bg-gray-100 data-selected:bg-primary-100 data-selected:border-l-4 data-selected:border-primary-600">{locale.get("SETTING_LICENSES")}</Tabs.Trigger>
               </Tabs.List>
-              <Tabs.Content value="general" class="flex-1 p-0">
+              <Tabs.Content value="general" class="flex-1 pl-4 overflow-y-auto">
                 <div class="flex gap-4 h-full">
                   <div class="w-[40%] overflow-y-scroll pr-4" style="align-self: stretch">
                     <VStack spacing={"$4"}>
@@ -207,18 +207,18 @@ export async function createConfiguration({
                   </div>
                 </div>
               </Tabs.Content>
-              <Tabs.Content value="game" class="flex-1 p-0 h-full">
+              <Tabs.Content value="game" class="flex-1 pl-4 overflow-y-auto">
                 <VStack spacing={"$4"} w="40%" alignItems="start">
                   <ChannelClientConfig />
                 </VStack>
               </Tabs.Content>
-              <Tabs.Content value="wine" class="flex-1 p-0 h-full">
+              <Tabs.Content value="wine" class="flex-1 pl-4 overflow-y-auto">
                 <VStack spacing={"$4"} w="40%" alignItems="start">
                   <WD />
                 </VStack>
               </Tabs.Content>
               <Show when={advanceSetting()}>
-                <Tabs.Content value="advanced" class="flex-1 p-0 h-full">
+                <Tabs.Content value="advanced" class="flex-1 pl-4 overflow-y-auto">
                   <VStack spacing={"$4"} w="40%" alignItems="start">
                     <Alert class="p-3 rounded border-l-4 bg-yellow-100 text-yellow-800 border-yellow-500">
                       {locale.get("SETTING_ADVANCED_ALERT")}
@@ -228,7 +228,7 @@ export async function createConfiguration({
                   </VStack>
                 </Tabs.Content>
               </Show>
-              <Tabs.Content value="licenses" class="flex-1 p-0 h-full">
+              <Tabs.Content value="licenses" class="flex-1 pl-4 overflow-y-auto">
                 <VStack spacing={"$4"} w="100%" alignItems="start">
                   <Heading>
                     Copyright Notice: steam.exe and lsteamclient.dll (in the
