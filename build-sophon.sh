@@ -1,5 +1,16 @@
 #!/bin/bash
+set -e  # Exit on any error
+
+# Validate hpatchz exists before building
+if [ ! -f "./sidecar/hpatchz/hpatchz" ]; then
+    echo "[ERROR] hpatchz not found at ./sidecar/hpatchz/hpatchz"
+    echo "[ERROR] Cannot build Sophon without hpatchz dependency"
+    exit 1
+fi
+
+echo "[+] Copying hpatchz to sophon_server/"
 cp ./sidecar/hpatchz/hpatchz ./sophon_server/hpatchz
+chmod +x ./sophon_server/hpatchz
 
 curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-osx-universal_binary.zip > protobuf.zip
 unzip -o -j protobuf.zip bin/protoc -d bin

@@ -283,3 +283,56 @@ export async function createSophonRetry(
     metadata: { host, port },
   });
 }
+
+export async function* createSophonRetryWithProgress(
+  host: string,
+  port: number
+): AsyncGenerator<["setStateText", string, ...string[]] | ["setProgress", number] | ["sophonClient", Sophon]> {
+  const maxRetries = 10;
+  const baseDelay = 500; // 500ms base delay
+  const maxDelay = 5000; // 5s max delay
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    yield ["setStateText", "INITIALIZING_SOPHON_RETRY", String(attempt + 1), String(maxRetries)];
+    yield ["setProgress", ((attempt + 1) / maxRetries) * 100];
+
+    try {
+      const client = await createSophon(host, port);
+      yield ["setProgress", 100];
+      yield ["sophonClient", client];
+      return;
+    } catch (error) {
+      if (attempt === maxRetries - 1) {
+        logError("Failed to create Sophon client after all retries", {
+          host,
+          port,
+          maxRetries,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw new NetworkError(
+          "Failed to create Sophon client after retries",
+          { metadata: { host, port, maxRetries } }
+        );
+      }
+
+      // Exponential backoff with jitter
+      const exponentialDelay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+      const jitter = Math.random() * 0.3 * exponentialDelay;
+      const delay = exponentialDelay + jitter;
+
+      logInfo("Retrying Sophon connection", {
+        attempt: attempt + 1,
+        maxRetries,
+        nextAttemptIn: Math.round(delay),
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw new NetworkError("Failed to create Sophon client", {
+    metadata: { host, port },
+  });
+}
+

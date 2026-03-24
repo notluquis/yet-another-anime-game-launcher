@@ -54,6 +54,15 @@ export const de_DE: typeof zh_CN = {
 
   INSTALL_DONE: "Fertig",
 
+  // Initialization process states
+  INITIALIZING_BACKEND: "Initializing backend...",
+  INITIALIZING_SOPHON_START: "Starting Sophon service...",
+  INITIALIZING_SOPHON_COMPLETE: "Sophon service started",
+  INITIALIZING_FETCHING_GAME_INFO: "Fetching game information...",
+  INITIALIZING_CHECKING_INSTALLATION: "Checking game installation...",
+  INITIALIZING_CHECKING_INTEGRITY: "Checking file integrity...",
+  INITIALIZING_COMPLETE: "Backend initialization complete",
+
   RELAUNCH_REQUIRED: "Neustart des Launchers erforderlich",
   RELAUNCH_REQUIRED_DESC:
     "Der Launcher wird neu gestartet, um die Wine-Installation abzuschließen.",

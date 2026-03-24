@@ -132,6 +132,17 @@ def startup_event():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("SOPHON_PORT", 8000))
-    host = os.environ.get("SOPHON_HOST", "127.0.0.1")
-    uvicorn.run(app, host=host, port=port, workers=1)
+    try:
+        port = int(os.environ.get("SOPHON_PORT", 8000))
+        host = os.environ.get("SOPHON_HOST", "127.0.0.1")
+        print(f"[SOPHON] Starting server on {host}:{port}", file=sys.stderr, flush=True)
+        uvicorn.run(app, host=host, port=port, workers=1)
+    except Exception as e:
+        print(f"\n{'='*60}", file=sys.stderr, flush=True)
+        print(f"[FATAL] Sophon server failed to start:", file=sys.stderr, flush=True)
+        print(f"[FATAL] {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        print(f"{'='*60}\n", file=sys.stderr, flush=True)
+        sys.stderr.flush()
+        sys.exit(1)

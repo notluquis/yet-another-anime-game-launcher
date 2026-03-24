@@ -52,6 +52,15 @@ export const ko_KR: typeof zh_CN = {
 
   INSTALL_DONE: "완료되었습니다",
 
+  // Initialization process states
+  INITIALIZING_BACKEND: "Initializing backend...",
+  INITIALIZING_SOPHON_START: "Starting Sophon service...",
+  INITIALIZING_SOPHON_COMPLETE: "Sophon service started",
+  INITIALIZING_FETCHING_GAME_INFO: "Fetching game information...",
+  INITIALIZING_CHECKING_INSTALLATION: "Checking game installation...",
+  INITIALIZING_CHECKING_INTEGRITY: "Checking file integrity...",
+  INITIALIZING_COMPLETE: "Backend initialization complete",
+
   RELAUNCH_REQUIRED: "재실행 필요",
   RELAUNCH_REQUIRED_DESC:
     "Wine 설치를 완료하기 위해서 런처의 재실행이 필요합니다",

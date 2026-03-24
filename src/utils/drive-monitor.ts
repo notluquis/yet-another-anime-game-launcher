@@ -46,6 +46,14 @@ class DriveMonitor {
    * @param path Absolute path to monitor
    */
   async addDrive(path: string): Promise<void> {
+    // Validate path - skip if empty or invalid
+    if (!path || path.trim() === "" || !path.startsWith("/")) {
+      await log(
+        `DriveMonitor: Skipped invalid path for monitoring: "${path}"`
+      );
+      return;
+    }
+
     if (this.drives.has(path)) {
       return;
     }
@@ -246,12 +254,22 @@ export function useDriveMonitor(gamePath: string) {
   const [isAccessible, setIsAccessible] = createSignal(true);
   const [lastError, setLastError] = createSignal<string | null>(null);
   const [volumeName, setVolumeName] = createSignal<string>("");
+  const [isMonitoring, setIsMonitoring] = createSignal(false);
 
   const monitor = getDriveMonitor();
 
-  // Initialize monitoring
+  // Validate path before initializing monitoring
+  const isValidPath = gamePath && gamePath.trim() !== "" && gamePath.startsWith("/");
+
+  // Initialize monitoring only if path is valid
   (async () => {
     try {
+      if (!isValidPath) {
+        setLastError("No game installation path selected");
+        return;
+      }
+
+      setIsMonitoring(true);
       await monitor.addDrive(gamePath);
 
       const state = monitor.getState(gamePath);
@@ -264,33 +282,47 @@ export function useDriveMonitor(gamePath: string) {
     }
   })();
 
-  // Subscribe to changes
-  const unsubscribe = monitor.onChange(async (event) => {
-    if (event.type === "disconnected" && event.path === gamePath) {
-      setIsAccessible(false);
-      setLastError("External drive disconnected");
-    } else if (event.type === "connected" && event.path === gamePath) {
-      setIsAccessible(true);
-      setLastError(null);
-    } else if (event.type === "checked" && event.path === gamePath) {
-      setIsAccessible(event.accessible);
-      if (!event.accessible) {
-        setLastError("Drive not accessible");
-      } else {
+  // Subscribe to changes only if monitoring
+  let unsubscribe: (() => void) | null = null;
+  if (isValidPath) {
+    unsubscribe = monitor.onChange(async (event) => {
+      if (event.type === "disconnected" && event.path === gamePath) {
+        setIsAccessible(false);
+        setLastError("External drive disconnected");
+      } else if (event.type === "connected" && event.path === gamePath) {
+        setIsAccessible(true);
         setLastError(null);
+      } else if (event.type === "checked" && event.path === gamePath) {
+        setIsAccessible(event.accessible);
+        if (!event.accessible) {
+          setLastError("Drive not accessible");
+        } else {
+          setLastError(null);
+        }
       }
-    }
-  });
+    });
+  }
 
   onCleanup(() => {
-    unsubscribe();
+    if (unsubscribe) {
+      unsubscribe();
+    }
   });
 
   return {
     isAccessible,
     lastError,
     volumeName,
-    forceCheck: async () => await monitor.checkDrive(gamePath),
-    cleanup: async () => await monitor.removeDrive(gamePath),
+    isMonitoring,
+    forceCheck: async () => {
+      if (isValidPath) {
+        await monitor.checkDrive(gamePath);
+      }
+    },
+    cleanup: async () => {
+      if (isValidPath) {
+        await monitor.removeDrive(gamePath);
+      }
+    },
   };
 }

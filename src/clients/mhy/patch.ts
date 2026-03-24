@@ -124,12 +124,18 @@ export async function* patchRevertProgram(
   server: Server,
   config: Config
 ): CommonUpdateProgram {
+  yield ["setStateText", "INITIALIZING_VERIFYING_STATE"];
+  
   try {
     await getKey("patched");
   } catch {
     return;
   }
+  
+  yield ["setStateText", "INITIALIZING_REVERTING_PATCHES"];
+  
   if (!config.patchOff) {
+    yield ["setStateText", "INITIALIZING_RESTORING_FILES"];
     for (const file of server.patched) {
       if (await fileOrDirExists(join(gameDir, file.file + ".bak"))) {
         await forceMove(
@@ -138,6 +144,8 @@ export async function* patchRevertProgram(
         );
       }
     }
+    
+    yield ["setStateText", "INITIALIZING_REMOVING_FILES"];
     for (const { file } of server.removed) {
       if (await fileOrDirExists(join(gameDir, file + ".bak"))) {
         await forceMove(join(gameDir, file + ".bak"), join(gameDir, file));
@@ -151,14 +159,18 @@ export async function* patchRevertProgram(
   }
 
   const system32Dir = join(wine.prefix, "drive_c", "windows", "system32");
-  if (wine.attributes.renderBackend == "dxmt") {
+  if (wine.attributes.renderBackend === "dxmt") {
+    yield ["setStateText", "INITIALIZING_REVERTING_GRAPHICS"];
     for (const f of DXMT_FILES) {
       await forceMove(join(system32Dir, f + ".bak"), join(system32Dir, f));
     }
   }
+  
   if (config.reshade) {
+    yield ["setStateText", "INITIALIZING_REVERTING_GRAPHICS"];
     await removeFileIfExists(join(gameDir, "dxgi.dll"));
     await removeFileIfExists(join(gameDir, "d3dcompiler_47.dll"));
   }
+  
   setKey("patched", null);
 }

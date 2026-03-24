@@ -50,6 +50,25 @@ export const zh_CN = {
 
   INSTALL_DONE: "安装成功",
 
+  // 初始化过程状态
+  INITIALIZING_BACKEND: "正在初始化后端...",
+  INITIALIZING_SOPHON_START: "正在启动Sophon服务...",
+  INITIALIZING_SOPHON_RETRY: "正在连接Sophon服务器 (尝试 {0}/{1})...",
+  INITIALIZING_SOPHON_COMPLETE: "Sophon服务已启动",
+  INITIALIZING_FETCHING_GAME_INFO: "正在获取游戏信息...",
+  INITIALIZING_CHECKING_INSTALLATION: "正在检查游戏安装...",
+  INITIALIZING_CHECKING_INTEGRITY: "正在检查文件完整性...",
+  INITIALIZING_VERIFYING_STATE: "正在验证游戏安装状态...",
+  INITIALIZING_REVERTING_PATCHES: "正在还原已应用的补丁...",
+  INITIALIZING_RESTORING_FILES: "正在恢复修改的文件...",
+  INITIALIZING_REMOVING_FILES: "正在清理临时文件...",
+  INITIALIZING_REVERTING_GRAPHICS: "正在重置图形配置...",
+  INITIALIZING_READING_MANIFEST: "正在读取游戏清单...",
+  INITIALIZING_SCANNING_FILES: "正在扫描游戏文件完整性 ({0}/{1})...",
+  INITIALIZING_VERIFYING_CHECKSUMS: "正在验证文件校验和...",
+  INITIALIZING_FIXING_CORRUPTED: "正在下载损坏的文件 ({0}/{1})...",
+  INITIALIZING_COMPLETE: "后端初始化完成",
+
   RELAUNCH_REQUIRED: "启动器需要重启",
   RELAUNCH_REQUIRED_DESC: "需要重启以更新wine版本",
 

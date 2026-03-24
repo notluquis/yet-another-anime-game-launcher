@@ -52,6 +52,15 @@ export const th_TH: typeof zh_CN = {
 
   INSTALL_DONE: "เสร็จสิ้น",
 
+  // Initialization process states
+  INITIALIZING_BACKEND: "Initializing backend...",
+  INITIALIZING_SOPHON_START: "Starting Sophon service...",
+  INITIALIZING_SOPHON_COMPLETE: "Sophon service started",
+  INITIALIZING_FETCHING_GAME_INFO: "Fetching game information...",
+  INITIALIZING_CHECKING_INSTALLATION: "Checking game installation...",
+  INITIALIZING_CHECKING_INTEGRITY: "Checking file integrity...",
+  INITIALIZING_COMPLETE: "Backend initialization complete",
+
   RELAUNCH_REQUIRED: "ต้องรีสตาร์ทโปรแกรม",
   RELAUNCH_REQUIRED_DESC:
     "ลันเชอร์จะทำการรีสตาร์ทเพื่อดำเนินการติดตั้ง wine ให้เสร็จสมบูรณ์",

@@ -52,6 +52,15 @@ export const ru_RU: typeof zh_CN = {
 
   INSTALL_DONE: "Готово",
 
+  // Initialization process states
+  INITIALIZING_BACKEND: "Initializing backend...",
+  INITIALIZING_SOPHON_START: "Starting Sophon service...",
+  INITIALIZING_SOPHON_COMPLETE: "Sophon service started",
+  INITIALIZING_FETCHING_GAME_INFO: "Fetching game information...",
+  INITIALIZING_CHECKING_INSTALLATION: "Checking game installation...",
+  INITIALIZING_CHECKING_INTEGRITY: "Checking file integrity...",
+  INITIALIZING_COMPLETE: "Backend initialization complete",
+
   RELAUNCH_REQUIRED: "Требуется повторный запуск",
   RELAUNCH_REQUIRED_DESC:
     "Программа запуска перезагрузится, чтобы выполнить установку Wine.",

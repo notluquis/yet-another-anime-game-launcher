@@ -67,16 +67,29 @@ export async function isDriveAccessible(path: string): Promise<boolean> {
 /**
  * Extracts the volume name from a /Volumes path
  * E.g., "/Volumes/GameDrive/folder" → "GameDrive"
+ * For internal drives, returns the last folder name
  *
  * @param path Absolute path to extract volume from
- * @returns Volume name or "Unknown" if cannot parse
+ * @returns Volume name or descriptive name based on the path
  */
 export function getVolumeName(path: string): string {
-  if (!path.startsWith("/Volumes/")) {
-    return "Unknown";
+  if (!path || path.trim() === "") {
+    return "Internal Storage";
   }
-  const parts = path.split("/");
-  return parts[2] || "Unknown";
+
+  if (path.startsWith("/Volumes/")) {
+    const parts = path.split("/");
+    const volumeName = parts[2];
+    return volumeName && volumeName.trim() !== "" ? volumeName : "Unknown";
+  }
+
+  // For internal drives, extract the meaningful part
+  const parts = path.split("/").filter(p => p && p.trim() !== "");
+  if (parts.length > 0) {
+    return parts[parts.length - 1];
+  }
+
+  return "Unknown";
 }
 
 /**

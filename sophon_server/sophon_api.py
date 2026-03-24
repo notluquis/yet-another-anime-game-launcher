@@ -85,12 +85,53 @@ if TYPE_CHECKING:
 SCRIPTDIR = pathlib.Path(__file__).resolve().parent
 
 # Needed for ldiff
-HPATCHZ_APP = SCRIPTDIR / "HDiffPatch/hpatchz"
-if not HPATCHZ_APP.is_file():
-	HPATCHZ_APP = SCRIPTDIR / ".." / "hpatchz" / "hpatchz"
-if not HPATCHZ_APP.is_file():
-	HPATCHZ_APP = SCRIPTDIR / "hpatchz"
-assert HPATCHZ_APP.is_file(), f"{HPATCHZ_APP.resolve()} not found."
+# Support PyInstaller bundled execution
+try:
+	if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+		# Running in a PyInstaller bundle
+		BUNDLE_DIR = pathlib.Path(sys._MEIPASS)
+		HPATCHZ_APP = BUNDLE_DIR / "hpatchz"
+		print(f"[SOPHON] PyInstaller mode - looking for hpatchz in bundle: {HPATCHZ_APP}", file=sys.stderr, flush=True)
+	else:
+		# Running in normal Python
+		print(f"[SOPHON] Source mode - looking for hpatchz", file=sys.stderr, flush=True)
+		HPATCHZ_APP = SCRIPTDIR / "HDiffPatch/hpatchz"
+		if not HPATCHZ_APP.is_file():
+			HPATCHZ_APP = SCRIPTDIR / ".." / "hpatchz" / "hpatchz"
+		if not HPATCHZ_APP.is_file():
+			HPATCHZ_APP = SCRIPTDIR / "hpatchz"
+
+	if not HPATCHZ_APP.is_file():
+		print(f"\n{'='*60}", file=sys.stderr, flush=True)
+		print(f"[FATAL ERROR] hpatchz binary not found!", file=sys.stderr, flush=True)
+		print(f"[FATAL ERROR] Searched at: {HPATCHZ_APP.resolve()}", file=sys.stderr, flush=True)
+		if getattr(sys, 'frozen', False):
+			print(f"[DEBUG] PyInstaller bundle dir: {sys._MEIPASS}", file=sys.stderr, flush=True)
+			try:
+				bundle_contents = list(pathlib.Path(sys._MEIPASS).iterdir())
+				print(f"[DEBUG] Bundle contents ({len(bundle_contents)} items):", file=sys.stderr, flush=True)
+				for item in bundle_contents[:20]:  # Show first 20 items
+					print(f"  - {item.name}", file=sys.stderr, flush=True)
+			except Exception as e:
+				print(f"[DEBUG] Could not list bundle: {e}", file=sys.stderr, flush=True)
+		else:
+			print(f"[DEBUG] Script directory: {SCRIPTDIR}", file=sys.stderr, flush=True)
+			print(f"[DEBUG] Searched paths:", file=sys.stderr, flush=True)
+			print(f"  1. {SCRIPTDIR / 'HDiffPatch/hpatchz'}", file=sys.stderr, flush=True)
+			print(f"  2. {SCRIPTDIR / '..' / 'hpatchz' / 'hpatchz'}", file=sys.stderr, flush=True)
+			print(f"  3. {SCRIPTDIR / 'hpatchz'}", file=sys.stderr, flush=True)
+		print(f"\n[SOLUTION] Copy hpatchz binary to sophon_server/ before building", file=sys.stderr, flush=True)
+		print(f"{'='*60}\n", file=sys.stderr, flush=True)
+		raise FileNotFoundError(f"Critical dependency missing: hpatchz not found at {HPATCHZ_APP.resolve()}")
+	
+	print(f"[SOPHON] ✓ Found hpatchz at: {HPATCHZ_APP}", file=sys.stderr, flush=True)
+except Exception as e:
+	print(f"\n[FATAL] Sophon initialization failed during hpatchz validation:", file=sys.stderr, flush=True)
+	print(f"[FATAL] {type(e).__name__}: {e}", file=sys.stderr, flush=True)
+	import traceback
+	traceback.print_exc(file=sys.stderr)
+	sys.stderr.flush()
+	sys.exit(1)
 
 libc = ctypes.CDLL("libc.dylib")
 c_malloc_zone_pressure_relief = libc.malloc_zone_pressure_relief
