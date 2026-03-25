@@ -386,6 +386,17 @@ PATH_LAUNCH="$(dirname "$CONTENTS_DIR")" exec "$SCRIPT_DIR/${appname}" --path="$
             <key>NSAllowsArbitraryLoads</key>
             <true/>
         </dict>
+        <key>LSApplicationCategoryType</key>
+        <string>public.app-category.games</string>
+        <key>GCSupportsGameMode</key>
+        <true/>
+        <key>LSSupportsGameMode</key>
+        <true/>
+        <key>LSEnvironment</key>
+        <dict>
+            <key>DXMT_METALFX_SPATIAL_SWAPCHAIN</key>
+            <string>1</string>
+        </dict>
     </dict>
     </plist>`
   );

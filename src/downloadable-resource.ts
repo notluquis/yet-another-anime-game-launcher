@@ -202,6 +202,22 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.74-builtin-signed`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
   setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
+
+  // Write default dxmt.conf only if it doesn't already exist (preserve user customizations)
+  const dxmtConf = resolve("./dxmt.conf");
+  if (!(await fileOrDirExists(dxmtConf))) {
+    await writeFile(
+      dxmtConf,
+      [
+        "# DXMT configuration — edit freely, this file is only created once.",
+        "# MetalFX Spatial upscaling factor for swapchain output.",
+        "# Requires DXMT_METALFX_SPATIAL_SWAPCHAIN=1 (set in app Info.plist).",
+        "# 1.77 renders at ~57% pixel count and upscales to fill Retina display.",
+        "# Disable Retina mode in YAAGL settings for best results.",
+        "d3d11.metalSpatialUpscaleFactor = 1.77",
+      ].join("\n")
+    );
+  }
 }
 
 const CURRENT_RESHADE_VERSION = "5.8.0";
