@@ -35,6 +35,7 @@ export async function createWineInstallProgram({
     // Use standard resolve() for wine directories (Neutralino 2026 standard)
     const wineBinaryDir = resolve("./wine");
 
+    await exec(["chflags", "-R", "nouchg,noschg", resolve(wineAbsPrefix)]).catch(() => {});
     await rmrf_dangerously(wineAbsPrefix);
     yield ["setStateText", "DOWNLOADING_ENVIRONMENT"];
     const isXZ = wineDistro.remoteUrl.endsWith(".xz");

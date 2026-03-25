@@ -14,6 +14,7 @@ import {
   rawString,
   build,
   runInSudo,
+  getKeyOrDefault,
 } from "../../../utils";
 import { Wine } from "../../../wine";
 import { Config } from "@config";
@@ -21,6 +22,7 @@ import { putLocal, patchProgram, patchRevertProgram } from "../patch";
 import { CN_BLOCK_URL, OS_BLOCK_URL } from "../../secret";
 import hk4eHDRGlobalReg from "../../../constants/hk4e_hdr_os.reg?raw";
 import hk4eHDRCnReg from "../../../constants/hk4e_hdr_cn.reg?raw";
+import { gt } from "semver";
 
 const HDR_REGISTRY_FILES = {
   hk4e_global: hk4eHDRGlobalReg,
@@ -70,7 +72,6 @@ export async function* launchGameProgram({
   }
 
   const cmd = `@echo off
-cd "%~dp0"
 copy "${wine.toWinePath(
     join(gameDir, atob("SG9Zb0tQcm90ZWN0LnN5cw=="))
   )}" "%WINDIR%\\system32\\"
@@ -130,14 +131,18 @@ ${await (async () => {
       );
     }
 
+    const useNativeDlls = !(
+      wine.attributes.renderBackend == "dxmt" &&
+      gt("0.74.0", await getKeyOrDefault("installed_dxmt_version", "0.0.0"))
+    );
     await wine.exec2(
       config.steamPatch ? "C:\\windows\\system32\\steam.exe" : "cmd",
       config.steamPatch
         ? [wine.toWinePath(join(gameDir, gameExecutable))]
-        : ["/c", `${wine.toWinePath(resolve("./config.bat"))}`],
+        : ["/c", `${wine.toWinePath(resolve("./config.bat"))} `],
       {
         MTL_HUD_ENABLED: config.metalHud ? "1" : "",
-        WINEDLLOVERRIDES: "d3d11,dxgi=n,b",
+        WINEDLLOVERRIDES: useNativeDlls ? "d3d11,dxgi=n,b" : "",
         ...(wine.attributes.renderBackend == "dxmt"
           ? {
               WINEMSYNC: "1",
