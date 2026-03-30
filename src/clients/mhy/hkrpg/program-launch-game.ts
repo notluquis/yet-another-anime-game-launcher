@@ -53,6 +53,13 @@ cd /d "${wine.toWinePath(gameDir)}"
     yield ["setStateText", "GAME_RUNNING"];
     const logfile = resolve(`./logs/game_${Date.now()}.log`);
 
+    const gamepolicyctl = "/Applications/Xcode.app/Contents/Developer/usr/bin/gamepolicyctl";
+    await exec(
+      ["osascript", "-e", `do shell script "${gamepolicyctl} game-mode set on > /dev/null 2>&1" with administrator privileges`],
+      {},
+      false
+    ).catch(() => {});
+
     if (config.blockNet) {
       const tmpScriptPath = "/tmp/yaagl_network_block_script.sh";
       const blockUrl =
@@ -119,6 +126,11 @@ cd /d "${wine.toWinePath(gameDir)}"
       logfile
     );
     await wine.waitUntilServerOff();
+    await exec(
+      ["osascript", "-e", `do shell script "${gamepolicyctl} game-mode set auto > /dev/null 2>&1" with administrator privileges`],
+      {},
+      false
+    ).catch(() => {});
   } catch (e: unknown) {
     // it seems game crashed?
     await log(String(e));

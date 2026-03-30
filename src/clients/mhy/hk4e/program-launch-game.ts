@@ -98,6 +98,13 @@ ${await (async () => {
     yield ["setStateText", "GAME_RUNNING"];
     const logfile = resolve(`./logs/game_${Date.now()}.log`);
 
+    const gamepolicyctl = "/Applications/Xcode.app/Contents/Developer/usr/bin/gamepolicyctl";
+    await exec(
+      ["osascript", "-e", `do shell script "${gamepolicyctl} game-mode set on > /dev/null 2>&1" with administrator privileges`],
+      {},
+      false
+    ).catch(() => {});
+
     if (config.blockNet) {
       const tmpScriptPath = "/tmp/yaagl_network_block_script.sh";
       const blockUrl = server.id == "hk4e_global" ? OS_BLOCK_URL : CN_BLOCK_URL;
@@ -164,6 +171,11 @@ ${await (async () => {
       logfile
     );
     await wine.waitUntilServerOff();
+    await exec(
+      ["osascript", "-e", `do shell script "${gamepolicyctl} game-mode set auto > /dev/null 2>&1" with administrator privileges`],
+      {},
+      false
+    ).catch(() => {});
     if (config.hk4eEnableHDR) {
       await revertHDRRegistry({ wine, server });
     }
