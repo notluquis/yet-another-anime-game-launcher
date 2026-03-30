@@ -82,10 +82,6 @@ export async function createLauncher({
 		);
 		taskQueue.next(() => init(config));
 
-		// Unused queue
-		const [nonUrgentStatusText, nonUrgentProgress, nonUrgentProgramBusy] =
-			createTaskQueueState({ locale });
-
 		const isOpen = isSettingsOpen;
 		const onOpen = () => setIsSettingsOpen(true);
 		const onClose = () => setIsSettingsOpen(false);
@@ -178,26 +174,6 @@ export async function createLauncher({
 								}}
 							>
 								<div class="flex-1">
-									<Show when={nonUrgentProgramBusy()}>
-										<h3
-											style={
-												"text-shadow: 1px 1px 2px #333;color:white;margin-bottom:5px;margin-top:8px"
-											}
-										>
-											{nonUrgentStatusText()}
-										</h3>
-										<Progress
-											value={nonUrgentProgress()}
-											indeterminate={nonUrgentProgress() === 0}
-											size="sm"
-											borderRadius={8}
-										>
-											<ProgressIndicator
-												style={"transition: none;"}
-												borderRadius={8}
-											></ProgressIndicator>
-										</Progress>
-									</Show>
 									<Show when={programBusy()}>
 										<h3
 											style={

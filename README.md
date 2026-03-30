@@ -1,146 +1,58 @@
-# Yet another anime game launcher (Yaagl)
+# YAAGL — Genshin Impact (Overseas) for macOS
 
-## 🚀 Fork Notice - Enhanced Version
+Personal fork of [3Shain/yet-another-anime-game-launcher](https://github.com/3Shain/yet-another-anime-game-launcher), stripped down to **Genshin Impact overseas (hk4eos) only**. Built to optimize my own gameplay experience on Apple Silicon — not a general-purpose launcher.
 
-This is an optimized fork of the original [yet-another-anime-game-launcher](https://github.com/3Shain/yet-another-anime-game-launcher) with significant performance improvements and modernized dependencies.
+## What changed from upstream
 
-### Key Improvements Over Original
+### Scope
+- **Single game**: removed all other clients (CN, HSR, ZZZ, HI3, Seasun, Bilibili). Only GI overseas remains.
+- **Smaller codebase**: ~45 deleted files, ~50 dead constants removed, dead UI code stripped.
+- **Focused config**: only GI-relevant settings (HDR, FPS unlock, DXMT, ReShade, Steam patch).
 
-#### ⚡ Build Performance (90% faster)
-- **Compilation Time**: 3-5 minutes → 18 seconds
-- **Python Compiler**: Nuitka 2.x → PyInstaller 6.18.0
-- **Binary Size**: ~25MB → 17MB
-- **Development Workflow**: 10x more agile iteration cycles
+### Backend
+- **Sophon sidecar rewritten from Python to Rust**: startup dropped from ~20s to ~50ms. No more Python/PyInstaller dependency.
+- **DXMT 0.74 builtin mode**: DLLs installed to Wine lib paths instead of system32 overrides.
+- **macOS Game Mode**: automatically enables `gamepolicyctl game-mode on` during gameplay.
 
-#### 🎨 UI Framework Modernization
-- **UI Library**: Hope UI → Kobalte 0.13.11
-- **Better Tailwind Integration**: Native Tailwind CSS support
-- **Component Library**: All interfaces rewritten with Kobalte primitives
-- **Type Safety**: Enhanced TypeScript integration
+### Frontend
+- **Kobalte** replaces Hope UI — lighter, better Tailwind integration.
+- **Vite 8** + Tailwind CSS 4 + SolidJS 1.9 + TypeScript 5.9.
+- **Build time**: ~1s production build, 237 modules, ~374 KB JS bundle.
 
-#### 📦 Dependency Stack (2026 Latest Versions)
-**Frontend:**
-- Vite 7.3.1
-- SolidJS 1.9.11
-- Kobalte 0.13.11
-- Tailwind CSS 3.4.19
-- TypeScript 5.9.3
-- ESLint 9.39.2 (flat config)
+### Fixes applied during audit
+- 8 missing `await` on async `setKey`/`writeFile` calls (could silently lose state).
+- Dead code branches that could never execute (CN-only paths, removed game checks).
+- Orphaned files (.reg, icons, client modules) cleaned up.
+- Typos fixed (`contentsss`, `currrent_wine_tag`).
 
-**Backend (Python 3.13.11):**
-- FastAPI 0.128.0
-- msgspec 0.20.0 (replaced pydantic - lighter & faster)
-- PyInstaller 6.18.0 (replaced Nuitka)
-- uvicorn 0.40.0
-- websockets 16.0
+## Supported version
 
-**Build System:**
-- @neutralinojs/neu 11.7.0
-- execa 9.6.1 (ESM)
-- rimraf 6.1.2 (ESM)
-- Full ESM module architecture
-
-#### 🔧 Technical Enhancements
-- **msgspec validation**: Replaced pydantic with msgspec (lighter dependencies, faster serialization)
-- **PyInstaller compilation**: 90% faster build times vs Nuitka
-- **ESM build system**: Fully migrated to ECMAScript modules
-- **Modern tooling**: ESLint 9 flat config, latest TypeScript-ESLint 8.x
-
-### Performance Metrics
-| Metric | Original | This Fork | Improvement |
-|--------|----------|-----------|-------------|
-| Build Time | 3-5 min | 18 sec | **90% faster** |
-| Binary Size | ~25 MB | 17 MB | **32% smaller** |
-| Dependencies | Hope UI + pydantic | Kobalte + msgspec | **Lighter stack** |
-
-### Original Project
-For the original implementation, visit: [3Shain/yet-another-anime-game-launcher](https://github.com/3Shain/yet-another-anime-game-launcher)
-
----
-
-## Current Supported Game Version:
-### GI: 5.3.0+ OS/CN **
-### HSR: 4.1.0 OS/CN
-### ZZZ: 2.7.0 OS/CN
-
-#### **: For Apple Silicon users: At least Sonoma 14.4 is required. Sequoia is recommended. ~~Version 5.6 and up requires an external tool(Crossover, Whisky, Kegworks etc.,) to update the game for now.~~ Partially fixed on the latest build. (CN installation is bugged.)
-
-## For Linux users
-[Anime Games Launcher](https://github.com/an-anime-team/anime-games-launcher) is a universal linux launcher for anime games
-
-<!-- ## Policy
-
-Please don't link to this repository. If you really want to share it with people, just tell the project name __Yaagl__ and where to find (Github!) but __don't share/disclose the link__ unless it's a private message.
-
-Do __not__ provide any forms of tutorial for _how to use Yaagl_ on public channels. (If you really want to do that, ask the project owner for permission first.)
-
-Do __not__ mention the real name of the game or the game company, in code commits, issues, pr or dicussions. Use _The Anime Game_ or _The Anime Company_ instead.
-
-Just follow these, or share and ruin this project for all other macOS (including Linux as well) players. -->
-
-<!-- ### Hall of Shame
-
-This is a list of people/organization violating Yaagl policies -->
+**Genshin Impact OS: 5.3.0+** — Apple Silicon, macOS Sonoma 14.4+ (Sequoia recommended).
 
 ## Is it safe?
 
-Use it at your own risk. Or enjoying it with a new f2p account.
-
-## Support
-
-[Our Discord server](https://discord.gg/HrV52MgSC2) is the **ONLY** place providing support if you have any issue just using this application.
-
-**DON'T FILE AN ISSUE** unless it's a technical problem coming with a clear root cause.
-
-> Simply put _My game doesn't launch_ or _I can't login_ without telling any technical detail is not acceptable, please go to the Discord server instead of abusing Github Issues
-
-**DON'T ASK FOR SUPPORT IN OTHER COMMUNITY**, especially the official one.
+Use it at your own risk.
 
 ## Install
 
-- Go to [Release](https://github.com/3Shain/yet-another-anime-game-launcher/releases/latest) and download the latest version.
+1. Download the latest release.
+2. Move the `.app` to `/Applications`.
+3. Store game files somewhere in your home folder (e.g. `~/Games/GI`), **not** inside `/Applications`.
 
-- Uncompress and copy the resulting application to your `/Applications` folder. (Do not open the application from Downloads folder).
+## Uninstall
 
-- Also make sure your game files aren't stored inside `/Applications`, use something inside your home folder instead, e.g `Games/GI`.
-<!--
-## Development (Outdated)
-
-### Setup
-```sh
-git clone https://github.com/3Shain/yet-another-anime-game-launcher
-cd yet-another-anime-game-launcher
-pnpm install
-./configure.sh
-pnpm exec neu update
-```
-
-
-### Run
-```sh
-# CN
-pnpm start
-# Oversea
-pnpm run start-hk4eos
-```
-
-### Build
-```sh
-node ./build-app.js
-``` -->
-
-## Uninstall (completely)
-1. Drag app to the bin
-2. Delete folder `~/Library/Application Support/Yaagl` or `~/Library/Application Support/Yaagl OS` if you are using oversea version. (For HSR and ZZZ the name of folder is slightly different)
+1. Drag the app to Trash.
+2. Delete `~/Library/Application Support/Yaagl OS`.
 
 ## Related projects
 
-* Custom `neutralinojs` binary from [3Shain/neutralinojs](https://github.com/3Shain/neutralinojs)
-* [DXVK-macOS](https://github.com/Gcenx/DXVK-macOS)
-* [MoltenVK](https://github.com/KhronosGroup/MoltenVK)
+- Original: [3Shain/yet-another-anime-game-launcher](https://github.com/3Shain/yet-another-anime-game-launcher)
+- [DXMT](https://github.com/3Shain/DXMT) — Direct3D to Metal translation
+- Custom [neutralinojs](https://github.com/3Shain/neutralinojs) binary
+- Linux alternative: [Anime Games Launcher](https://github.com/an-anime-team/anime-games-launcher)
 
 ## Special thanks
-* An Anime Team
-* Krock, the game running on macOS can not come true without his patch (you can find the link to his work in this repository, while you have to make a little effort ;) )
 
-* mkrsym1, tackled IMO the most challenging AC component. It's a really remarkable and mind-blowing achievement.
+- 3Shain — original YAAGL and Wine/DXMT work
+- An Anime Team
+- Krock & mkrsym1 — patch work that makes this possible on macOS
