@@ -14,7 +14,7 @@ export default defineConfig({
       name: "channel-client switcher",
       load: (id) => {
         if (id.endsWith("/src/clients/index.ts")) {
-          const cc = process.env["YAAGL_CHANNEL_CLIENT"] ?? "hk4ecn";
+          const cc = process.env["YAAGL_CHANNEL_CLIENT"] ?? "hk4eos";
           console.info(`Building channel client ${cc}`);
           return { code: `export * from './${cc}'`, moduleType: "js" };
         }

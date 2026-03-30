@@ -3,7 +3,6 @@ import { Github, GithubReleaseInfo } from "./github";
 import { gt } from "semver";
 import { CURRENT_YAAGL_VERSION } from "./constants";
 import {
-  env,
   forceMove,
   log,
   resolve,
@@ -24,49 +23,11 @@ export async function createUpdater(deps: { github: Github; aria2: Aria2 }) {
     } as const;
   }
   try {
-    let updateVersion = "";
-    if (
-      import.meta.env["YAAGL_CHANNEL_CLIENT"] &&
-      import.meta.env["YAAGL_CHANNEL_CLIENT"] != "hk4euniversal"
-    ) {
-      updateVersion = import.meta.env["YAAGL_CHANNEL_CLIENT"];
-    } else if ((await env("YAAGL_OS")) == "1") {
-      updateVersion = "hk4eos";
-    } else {
-      updateVersion = "hk4ecn";
-    }
     const latest: GithubReleaseInfo = (await deps.github.api(
       `/repos/${owner}/${repo}/releases/latest`
     )) as GithubReleaseInfo;
-    const update_neu = `resources_${updateVersion}.neu`;
-    const neu = latest.assets.find(x => x.name == update_neu);
-
-    // Determine app bundle name based on updateVersion
-    let appBundleName = "";
-    switch (updateVersion) {
-      case "hk4ecn":
-        appBundleName = "Yaagl.app.tar.gz";
-        break;
-      case "hk4eos":
-        appBundleName = "Yaagl.OS.app.tar.gz";
-        break;
-      case "bh3glb":
-        appBundleName = "Yaagl.Honkai.Global.app.tar.gz";
-        break;
-      case "hkrpgcn":
-        appBundleName = "Yaagl.HSR.app.tar.gz";
-        break;
-      case "hkrpgos":
-        appBundleName = "Yaagl.HSR.OS.app.tar.gz";
-        break;
-      case "napcn":
-        appBundleName = "Yaagl.ZZZ.app.tar.gz";
-        break;
-      case "napos":
-        appBundleName = "Yaagl.ZZZ.OS.app.tar.gz";
-        break;
-    }
-    const sidecar = latest.assets.find(x => x.name == appBundleName);
+    const neu = latest.assets.find(x => x.name == "resources_hk4eos.neu");
+    const sidecar = latest.assets.find(x => x.name == "Yaagl.OS.app.tar.gz");
 
     if (gt(latest.tag_name, CURRENT_YAAGL_VERSION) && neu !== undefined) {
       return {
@@ -109,16 +70,7 @@ export async function* downloadProgram(
     }
     await rmrf_dangerously("./sidecar");
     await mkdirp("./sidecar");
-    let topLevelDir = sidecarUrl.split("/").pop()?.replace(".tar.gz", "") || "";
-
-    if (topLevelDir === "Yaagl.app") topLevelDir = "Yaagl.app";
-    if (topLevelDir === "Yaagl.OS.app") topLevelDir = "Yaagl OS.app";
-    if (topLevelDir === "Yaagl.Honkai.Global.app")
-      topLevelDir = "Yaagl Honkai Global.app";
-    if (topLevelDir === "Yaagl.HSR.app") topLevelDir = "Yaagl HSR.app";
-    if (topLevelDir === "Yaagl.HSR.OS.app") topLevelDir = "Yaagl HSR OS.app";
-    if (topLevelDir === "Yaagl.ZZZ.app") topLevelDir = "Yaagl ZZZ.app";
-    if (topLevelDir === "Yaagl.ZZZ.OS.app") topLevelDir = "Yaagl ZZZ OS.app";
+    const topLevelDir = "Yaagl OS.app";
 
     await tar_extract_directory(
       "./sidecar.tar.gz",

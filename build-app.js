@@ -57,61 +57,12 @@ async function ensureSophonBuild() {
   const config = await fs.readJSON(
     path.resolve(process.cwd(), "neutralino.config.json")
   );
-  let bundleId;
-  let appDistributionName;
-  let includeSophon = false;
-  switch (process.env["YAAGL_CHANNEL_CLIENT"]) {
-    case "hk4ecn":
-      bundleId = config.applicationId;
-      appDistributionName = config.cli.binaryName;
-      includeSophon = true;
-      break;
-    case "hk4eos":
-      bundleId = config.applicationId + ".os";
-      appDistributionName = config.cli.binaryName + " OS";
-      includeSophon = true;
-      break;
-    case "hk4euniversal":
-      bundleId = config.applicationId + ".uni";
-      appDistributionName = config.cli.binaryName + " Uni";
-      includeSophon = true;
-      break;
-    case "hkrpgcn":
-      bundleId = config.applicationId + ".hkrpg.cn";
-      appDistributionName = config.cli.binaryName + " HSR";
-      config.modes.window.icon = "/src/icons/March7th.cr.png";
-      break;
-    case "hkrpgos":
-      bundleId = config.applicationId + ".hkrpg.os";
-      appDistributionName = config.cli.binaryName + " HSR OS";
-      config.modes.window.icon = "/src/icons/March7th.cr.png";
-      break;
-    case "bh3glb":
-      bundleId = config.applicationId + ".bh3.glb";
-      appDistributionName = config.cli.binaryName + " Honkai Global";
-      config.modes.window.icon = "/src/icons/Elysia.cr.png";
-      break;
-    case "cbjq":
-      bundleId = config.applicationId + ".scz.os";
-      appDistributionName = config.cli.binaryName + " SCZ OS";
-      break;
-    case "cbjqcn":
-      bundleId = config.applicationId + ".scz.cn";
-      appDistributionName = config.cli.binaryName + " SCZ";
-      break;
-    case "napos":
-      bundleId = config.applicationId + ".nap.os";
-      appDistributionName = config.cli.binaryName + " ZZZ OS";
-      config.modes.window.icon = "/src/icons/ZZZ_Bang.cr.png";
-      break;
-    case "napcn":
-      bundleId = config.applicationId + ".nap.cn";
-      appDistributionName = config.cli.binaryName + " ZZZ";
-      config.modes.window.icon = "/src/icons/ZZZ_Bang.cr.png";
-      break;
-    default:
-      throw new Error("YAAGL_CHANNEL_CLIENT env required");
+  if (process.env["YAAGL_CHANNEL_CLIENT"] !== "hk4eos") {
+    throw new Error("YAAGL_CHANNEL_CLIENT must be 'hk4eos'");
   }
+  const bundleId = config.applicationId + ".os";
+  const appDistributionName = config.cli.binaryName + " OS";
+  const includeSophon = true;
   if (process.env["YAAGL_TEST"]) {
     bundleId += ".test";
     appDistributionName += " Test";
@@ -256,35 +207,18 @@ async function ensureSophonBuild() {
   // );
 
   //
-  await fs.writeFile(
-    path.resolve(
-      process.cwd(),
-      `${appDistributionName}.app`,
-      "Contents",
-      "MacOS",
-      "parameterized"
-    ),
-    `#!/usr/bin/env bash
-SCRIPT_DIR="$( cd -- "$( dirname -- "\${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-APST_DIR="$HOME/Library/Application Support/${appDistributionName}"
-echo $APST_DIR
-mkdir -p "$APST_DIR"
-CONTENTS_DIR="$(dirname "$SCRIPT_DIR")"
-rsync -rlptu "$CONTENTS_DIR/Resources/." "$APST_DIR"
-cd "$APST_DIR"
-PATH_LAUNCH="$(dirname "$CONTENTS_DIR")" exec "$SCRIPT_DIR/${appname}" --path="$APST_DIR"`
-  );
-
-  await fs.chmod(
-    path.resolve(
-      process.cwd(),
-      `${appDistributionName}.app`,
-      "Contents",
-      "MacOS",
-      "parameterized"
-    ),
-    0o755
-  );
+  // Compile the C launcher binary (replaces the old shell script)
+  const launcherSrc = path.resolve(process.cwd(), "launcher.c");
+  const launcherDst = path.resolve(process.cwd(), `${appDistributionName}.app`, "Contents", "MacOS", "launcher");
+  await execa("clang", [
+    "-Os",
+    "-arch", "arm64",
+    "-mmacosx-version-min=10.15",
+    "-o", launcherDst,
+    launcherSrc,
+  ]);
+  await execa("strip", [launcherDst]);
+  await fs.chmod(launcherDst, 0o755);
   await fs.chmod(
     path.resolve(
       process.cwd(),
@@ -323,10 +257,7 @@ PATH_LAUNCH="$(dirname "$CONTENTS_DIR")" exec "$SCRIPT_DIR/${appname}" --path="$
   await fs.copy(path.resolve(process.cwd(), `sidecar`), sidecarDst, {
     preserveTimestamps: true,
   });
-  // Remove protonextras for hkrpg and nap
-  if (["hkrpgcn", "hkrpgos", "napcn", "napos"].includes(process.env["YAAGL_CHANNEL_CLIENT"])) {
-    await fs.remove(path.resolve(sidecarDst, "protonextras"));
-  }
+
 
   await (async function getFiles(dir) {
     const dirents = await fs.readdir(dir, { withFileTypes: true });
@@ -362,7 +293,7 @@ PATH_LAUNCH="$(dirname "$CONTENTS_DIR")" exec "$SCRIPT_DIR/${appname}" --path="$
         <key>NSHighResolutionCapable</key>
         <true/>
         <key>CFBundleExecutable</key>
-        <string>parameterized</string>
+        <string>launcher</string>
         <key>CFBundleIconFile</key>
         <string>icon.icns</string>
         <key>CFBundleIdentifier</key>

@@ -16,7 +16,6 @@ import {
 import { ENSURE_HOSTS } from "../clients/secret";
 import { ensureHosts } from "../hosts";
 import { createWine } from "./wine";
-import { installMediaFoundation } from "./mf";
 import { WineDistribution } from "./distro";
 import { addCertsToWine } from "./cert";
 
@@ -89,14 +88,6 @@ export async function createWineInstallProgram({
     });
     await wine.exec("wineboot", ["-u"], {}, "/dev/null");
     await wine.exec("winecfg", ["-v", "win10"], {}, "/dev/null");
-
-    // FIXME: don't abuse import.meta.env
-    if (
-      String(import.meta.env["YAAGL_CHANNEL_CLIENT"]).startsWith("bh3") ||
-      String(import.meta.env["YAAGL_CHANNEL_CLIENT"]).startsWith("cbjq")
-    ) {
-      yield* installMediaFoundation(aria2, wine);
-    }
 
     await setKey("wine_state", "ready");
     await setKey("wine_tag", wineDistro.id);
