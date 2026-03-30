@@ -21,27 +21,11 @@ import { Config } from "@config";
 import { putLocal, patchProgram, patchRevertProgram } from "../patch";
 import { OS_BLOCK_URL } from "../../secret";
 import hk4eHDRGlobalReg from "../../../constants/hk4e_hdr_os.reg?raw";
-import hk4eHDRCnReg from "../../../constants/hk4e_hdr_cn.reg?raw";
 import { gt } from "semver";
 
-const HDR_REGISTRY_FILES = {
-  hk4e_global: hk4eHDRGlobalReg,
-  hk4e_cn: hk4eHDRCnReg,
-} as const;
-
-async function applyHDRRegistry({
-  wine,
-  server,
-}: {
-  wine: Wine;
-  server: Server;
-}) {
-  const regContent =
-    HDR_REGISTRY_FILES[server.id as keyof typeof HDR_REGISTRY_FILES];
-  if (!regContent) return;
-
+async function applyHDRRegistry({ wine }: { wine: Wine }) {
   const regPath = resolve("./hk4e_enable_hdr.reg");
-  await writeFile(regPath, regContent);
+  await writeFile(regPath, hk4eHDRGlobalReg);
   try {
     await wine.exec("regedit", [wine.toWinePath(regPath)], {}, "/dev/null");
     await wine.waitUntilServerOff();
@@ -68,7 +52,7 @@ export async function* launchGameProgram({
 
   await wine.setProps(config);
   if (config.hk4eEnableHDR) {
-    await applyHDRRegistry({ wine, server });
+    await applyHDRRegistry({ wine });
   }
 
   const cmd = `@echo off
@@ -177,7 +161,7 @@ ${await (async () => {
       false
     ).catch(() => {});
     if (config.hk4eEnableHDR) {
-      await revertHDRRegistry({ wine, server });
+      await revertHDRRegistry({ wine });
     }
   } catch (e: unknown) {
     // it seems game crashed?
@@ -190,21 +174,9 @@ ${await (async () => {
   yield* patchRevertProgram(gameDir, wine, server, config);
 }
 
-async function revertHDRRegistry({
-  wine,
-  server,
-}: {
-  wine: Wine;
-  server: Server;
-}) {
-  let key = "HKEY_CURRENT_USER\\Software\\\x6d\x69\x48\x6f\x59\x6f\\";
-  if (server.id === "hk4e_cn") {
-    key += "\u539f\u795e";
-  } else if (server.id === "hk4e_global") {
-    key += "\x47\x65\x6e\x73\x68\x69\x6e\x20\x49\x6d\x70\x61\x63\x74";
-  } else {
-    return;
-  }
+async function revertHDRRegistry({ wine }: { wine: Wine }) {
+  const key =
+    "HKEY_CURRENT_USER\\Software\\\x6d\x69\x48\x6f\x59\x6f\\\x47\x65\x6e\x73\x68\x69\x6e\x20\x49\x6d\x70\x61\x63\x74";
   const reg = [
     `Windows Registry Editor Version 5.00`,
     ``,

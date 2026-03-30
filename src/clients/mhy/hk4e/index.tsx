@@ -41,7 +41,6 @@ import { Sophon, createSophonRetryWithProgress } from "@sophon";
 import { Wine } from "@wine";
 import {
 	checkAndDownloadDXMT,
-	checkAndDownloadDXVK,
 	checkAndDownloadReshade,
 } from "../../../downloadable-resource";
 import { createWorkaround3Config } from "./config/workaround-3";
@@ -50,14 +49,8 @@ import createSteamPatch from "./config/steam-patch";
 import createBlockNet from "./config/block-net";
 import { createEnableHDRConfig } from "./config/enable-hdr";
 import { getGameVersion } from "../unity";
-import {
-	VoicePackNames,
-	HoyoConnectGameBackgroundType,
-} from "../launcher-info";
-import { getLatestAdvInfo, getLatestVersionInfo } from "../hyp-connect";
-
-// no need to check supported version
-// const CURRENT_SUPPORTED_VERSION = "4.8.0";
+import { HoyoConnectGameBackgroundType } from "../launcher-info";
+import { getLatestAdvInfo } from "../hyp-connect";
 
 export async function createHK4EChannelClient({
 	server,
@@ -184,14 +177,6 @@ export async function createHK4EChannelClient({
 			const gameVersion = await getGameVersionGI(
 				join(selection, server.dataDir),
 			);
-			// if (gt(gameVersion, CURRENT_SUPPORTED_VERSION)) {
-			//   await locale.alert(
-			//     "UNSUPPORTED_VERSION",
-			//     "PLEASE_WAIT_FOR_LAUNCHER_UPDATE",
-			//     [gameVersion]
-			//   );
-			//   return;
-			// } else
 			if (lt(gameVersion, LATEST_GAME_VERSION)) {
 				const updatable = UPDATABLE_VERSIONS.includes(gameVersion);
 				if (!updatable) {
@@ -261,17 +246,6 @@ export async function createHK4EChannelClient({
 			});
 		},
 		async *launch(config: Config) {
-			// if (
-			//   gt(gameCurrentVersion(), CURRENT_SUPPORTED_VERSION) &&
-			//   !config.patchOff
-			// ) {
-			//   await locale.alert(
-			//     "UNSUPPORTED_VERSION",
-			//     "PLEASE_WAIT_FOR_LAUNCHER_UPDATE",
-			//     [gameCurrentVersion()]
-			//   );
-			//   return;
-			// }
 			if (config.reshade) {
 				yield* checkAndDownloadReshade(aria2, wine, _gameInstallDir());
 			}
