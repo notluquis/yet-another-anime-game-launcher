@@ -6,7 +6,7 @@ import { LocaleTextKey } from "./locale";
 
 interface GameOperationOptions {
   gamedir: string;
-  game_type: string; // "hk4e" or "nap"
+  game_type: string;
   tempdir?: string; // sophon manifest and intermediate files
 }
 
@@ -37,7 +37,7 @@ export interface SophonProgressEvent {
 }
 
 export interface SophonOnlineGameInfo {
-  game_type: "hk4e" | "nap" | "";
+  game_type: "hk4e" | "";
   version: string;
   install_size: number;
   updatable_versions: string[];

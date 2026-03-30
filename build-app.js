@@ -178,16 +178,6 @@ async function ensureSophonBuild() {
       path.join(process.cwd(), config.modes.window.icon)
     );
     icns.addFromPng(iconFile, ["ic09"], raw);
-    // icns.addFromPng(iconFile, ['ic07'], raw);
-    // icns.addFromPng(iconFile, ['ic08'], raw);
-    // icns.addFromPng(iconFile, ['ic04'], raw);
-    // icns.addFromPng(iconFile, ['ic09'], raw);
-    // icns.addFromPng(iconFile, ['ic05'], raw);
-    // icns.addFromPng(iconFile, ['ic12'], raw);
-    // icns.addFromPng(iconFile, ['ic13'], raw);
-    // icns.addFromPng(iconFile, ['ic14'], raw);
-    // icns.addFromPng(iconFile, ['ic10'], raw);
-    // icns.addFromPng(iconFile, ['ic11'], raw);
   }
   // save icns file
   await fs.writeFile(

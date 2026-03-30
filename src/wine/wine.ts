@@ -4,8 +4,6 @@ import {
   getKey,
   log,
   setKey,
-  arrayFind,
-  getCPUInfo,
   build,
   generateRandomString,
   stats,

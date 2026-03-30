@@ -51,7 +51,7 @@ export async function* checkAndDownloadMoltenVK(
       `${humanFileSize(Number(progress.downloadSpeed))}`,
     ];
   }
-  setKey("installed_moltenvk_version", CURRENT_MVK_VERSION);
+  await setKey("installed_moltenvk_version", CURRENT_MVK_VERSION);
 }
 
 export const DXVK_FILES = [
@@ -92,7 +92,7 @@ export async function* checkAndDownloadDXVK(aria2: Aria2): CommonUpdateProgram {
     }
   }
 
-  setKey("installed_dxvk_version", CURRENT_DXVK_VERSION);
+  await setKey("installed_dxvk_version", CURRENT_DXVK_VERSION);
 }
 
 export async function* checkAndDownloadJadeite(
@@ -133,7 +133,7 @@ export async function* checkAndDownloadJadeite(
     yield ["setProgress", (dec / total) * 100];
   }
 
-  setKey("installed_jadeite_version", CURRENT_JADEITE_VERSION);
+  await setKey("installed_jadeite_version", CURRENT_JADEITE_VERSION);
 }
 
 export const DXMT_FILES = ["d3d10core.dll", "d3d11.dll", "dxgi.dll"];
@@ -201,7 +201,7 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   ]);
   await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.74-builtin-signed`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
-  setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
+  await setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
 
   // Write default dxmt.conf only if it doesn't already exist (preserve user customizations)
   const dxmtConf = resolve("./dxmt.conf");
@@ -296,12 +296,12 @@ export async function* checkAndDownloadReshade(
     join(reshaderDir, "dxgi.dll")
   );
 
-  writeFile(
+  await writeFile(
     join(gameDir, "ReShade.ini"),
     `[GENERAL]
 EffectSearchPaths=${wine.toWinePath(resolve("./reshade/Shaders"))}
 TextureSearchPaths=${wine.toWinePath(resolve("./reshade/Textures"))}`
   );
 
-  setKey("installed_reshade", CURRENT_RESHADE_VERSION);
+  await setKey("installed_reshade", CURRENT_RESHADE_VERSION);
 }

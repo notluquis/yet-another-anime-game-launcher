@@ -1,7 +1,5 @@
 import { Server } from "@constants";
 
-// import d from "../../external/hk4e/dW5pdHlwbGF5ZXJfcGF0Y2hfb3MudmNkaWZmCg==.vcdiff?url";
-
 import s from "../assets/Nahida.cr.png";
 
 import { createHK4EChannelClient } from "./mhy/hk4e";
@@ -14,8 +12,6 @@ import {
   OS_EXECUTABLE,
   CN_COMPANY_NAME,
   OS_PRODUCT_NAME,
-  DLL1,
-  DLL2,
   OS_CUSTOM_HOSTS,
 } from "./secret";
 
@@ -32,19 +28,9 @@ const SERVER_DEFINITION: Server = {
   adv_url: OS_ADV_URL,
   dataDir: OS_DATA_DIR,
   executable: OS_EXECUTABLE,
-  THE_REAL_COMPANY_NAME: CN_COMPANY_NAME, // that's correct 😎
+  THE_REAL_COMPANY_NAME: CN_COMPANY_NAME,
   product_name: OS_PRODUCT_NAME,
-  patched: [
-    // {
-    //   file: DLL1,
-    //   diffUrl: d,
-    // },
-    // {
-    //   file: `${OS_DATA_DIR}/Plugins/${DLL2}` as const,
-    //   diffUrl: f,
-    //   tag: "workaround3",
-    // },
-  ],
+  patched: [],
   removed: [
     {
       file: atob("R2Vuc2hpbkltcGFjdF9EYXRhL3VwbG9hZF9jcmFzaC5leGU="),
@@ -55,10 +41,6 @@ const SERVER_DEFINITION: Server = {
     {
       file: atob("R2Vuc2hpbkltcGFjdF9EYXRhL1BsdWdpbnMvdnVsa2FuLTEuZGxs"),
     },
-    // {
-    //   file: atob("bWh5cGJhc2UuZGxs"),
-    //   tag: "workaround3",
-    // },
   ],
   hosts: OS_CUSTOM_HOSTS,
   added: [],

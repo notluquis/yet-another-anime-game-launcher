@@ -18,7 +18,6 @@ import {
   xdelta3,
 } from "@utils";
 import { Config } from "@config";
-import { disableUnityFeature } from "./unity";
 import { Wine } from "@wine";
 import { DXMT_FILES, DXVK_FILES } from "../../downloadable-resource";
 
@@ -123,7 +122,7 @@ export async function* patchProgram(
     join(syswow64Dir, "lsteamclient.dll")
   );
 
-  setKey("patched", "1");
+  await setKey("patched", "1");
 }
 
 export async function* patchRevertProgram(
@@ -192,5 +191,5 @@ export async function* patchRevertProgram(
     await removeFileIfExists(join(gameDir, "d3dcompiler_47.dll"));
   }
   
-  setKey("patched", null);
+  await setKey("patched", null);
 }

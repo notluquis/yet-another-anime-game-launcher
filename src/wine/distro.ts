@@ -90,8 +90,8 @@ export async function checkWine(github: Github): Promise<WineStatus> {
           wine_versions.find(x => x.id == update_wine_tag) ?? defaultDistro,
       } as const;
     }
-    const currrent_wine_tag = await getKey("wine_tag");
-    const wineDistribution = wine_versions.find(x => x.id == currrent_wine_tag);
+    const current_wine_tag = await getKey("wine_tag");
+    const wineDistribution = wine_versions.find(x => x.id === current_wine_tag);
     if (wineDistribution) {
       return { wineReady: true, wineDistribution } as const;
     } else {

@@ -19,7 +19,7 @@ import {
 import { Wine } from "../../../wine";
 import { Config } from "@config";
 import { putLocal, patchProgram, patchRevertProgram } from "../patch";
-import { CN_BLOCK_URL, OS_BLOCK_URL } from "../../secret";
+import { OS_BLOCK_URL } from "../../secret";
 import hk4eHDRGlobalReg from "../../../constants/hk4e_hdr_os.reg?raw";
 import hk4eHDRCnReg from "../../../constants/hk4e_hdr_cn.reg?raw";
 import { gt } from "semver";
@@ -107,7 +107,7 @@ ${await (async () => {
 
     if (config.blockNet) {
       const tmpScriptPath = "/tmp/yaagl_network_block_script.sh";
-      const blockUrl = server.id == "hk4e_global" ? OS_BLOCK_URL : CN_BLOCK_URL;
+      const blockUrl = OS_BLOCK_URL;
 
       const commands = [
         `#!/bin/sh`,

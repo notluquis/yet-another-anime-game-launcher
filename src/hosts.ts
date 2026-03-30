@@ -24,6 +24,6 @@ export async function ensureHosts(hosts: [string, string][]) {
     "# End of section",
     ...(newContentPost.length ? newContentPost : [""]),
   ];
-  const contentsss = newContent.join("\n");
-  await exec(["printf", contentsss, rawString(">"), "/etc/hosts"], {}, true);
+  const contents = newContent.join("\n");
+  await exec(["printf", contents, rawString(">"), "/etc/hosts"], {}, true);
 }
