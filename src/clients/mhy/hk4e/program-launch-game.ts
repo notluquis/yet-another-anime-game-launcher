@@ -60,20 +60,10 @@ copy "${wine.toWinePath(
     join(gameDir, atob("SG9Zb0tQcm90ZWN0LnN5cw=="))
   )}" "%WINDIR%\\system32\\"
 cd /d "${wine.toWinePath(gameDir)}"
-${await (async () => {
-  if (config.fpsUnlock !== "default") {
-    return `"${wine.toWinePath(
-      resolve("./fpsunlock/genshin-force-fps.exe")
-    )}" -f ${config.fpsUnlock} -o "${wine.toWinePath(
-      join(gameDir, gameExecutable)
-    )}"`;
-  } else {
-    return `"${wine.toWinePath(join(gameDir, gameExecutable))}"${
-      /* workaround 10351-4001 */
-      " -platform_type CLOUD_THIRD_PARTY_PC -is_cloud 1"
-    }`;
-  }
-})()}`;
+"${wine.toWinePath(join(gameDir, gameExecutable))}"${
+    /* workaround 10351-4001 */
+    " -platform_type CLOUD_THIRD_PARTY_PC -is_cloud 1"
+  }`;
   await writeFile(resolve("config.bat"), cmd);
   yield* patchProgram(gameDir, wine, server, config);
   await mkdirp(resolve("./logs"));
@@ -138,7 +128,7 @@ ${await (async () => {
           ? {
               WINEMSYNC: "1",
               DXMT_LOG_PATH: yaaglDir,
-              DXMT_CONFIG: `d3d11.preferredMaxFrameRate=${config.fpsUnlock !== "default" ? config.fpsUnlock : "60"};`,
+              DXMT_CONFIG: `d3d11.preferredMaxFrameRate=60;dxgi.handleAltTab=True;`,
               DXMT_CONFIG_FILE: join(yaaglDir, "dxmt.conf"),
               GST_PLUGIN_FEATURE_RANK: "atdec:MAX,avdec_h264:MAX",
             }

@@ -107,9 +107,6 @@ export const ko_KR: typeof zh_CN = {
   SETTING_OPEN_YAAGL_DIR: " YAAGL 데이터 경로 열기",
   SETTING_YAAGL_VERSION: "YAAGL 버전",
 
-  SETTING_FPS_UNLOCK: "FPS 제한 해제",
-  SETTING_FPS_UNLOCK_DEFAULT: "비활성화",
-
   SETTING_ADVANCED: "고급",
   SETTING_ADVANCED_ALERT:
     "당신이 무엇을 하고 있는지 모른다면, 아무것도 바꾸지 마세요.",

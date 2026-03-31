@@ -106,9 +106,6 @@ export const ru_RU: typeof zh_CN = {
   SETTING_OPEN_YAAGL_DIR: "Откройте каталог данных YAAGL",
   SETTING_YAAGL_VERSION: "Версия YAAGL",
 
-  SETTING_FPS_UNLOCK: "Разблокируйте FPS лимит",
-  SETTING_FPS_UNLOCK_DEFAULT: "Выключено",
-
   SETTING_ADVANCED: "Дополнительные",
   SETTING_ADVANCED_ALERT:
     "НИЧЕГО НЕ МЕНЯЙТЕ, если только вы не знаете, что делаете.",

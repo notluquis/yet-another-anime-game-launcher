@@ -94,10 +94,14 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
       dxmtConf,
       [
         "# DXMT configuration — edit freely, this file is only created once.",
+        "",
         "# MetalFX Spatial upscaling is disabled by default (factor 1.0).",
         "# Only useful on Retina displays where backing store is 2x logical.",
         "# On non-Retina monitors, factor > 1.0 creates wasted GPU work.",
         "d3d11.metalSpatialUpscaleFactor = 1.0",
+        "",
+        "# Handle Cmd+Tab gracefully in fullscreen exclusive mode.",
+        "dxgi.handleAltTab = True",
       ].join("\n")
     );
   }

@@ -106,9 +106,6 @@ export const th_TH: typeof zh_CN = {
   SETTING_OPEN_YAAGL_DIR: "เปิดไดเรกทอรีข้อมูล YAAGL",
   SETTING_YAAGL_VERSION: "เวอร์ชัน YAAGL",
 
-  SETTING_FPS_UNLOCK: "ปลดล็อกจำกัด FPS",
-  SETTING_FPS_UNLOCK_DEFAULT: "ปิดใช้งาน",
-
   SETTING_ADVANCED: "ขั้นสูง",
   SETTING_ADVANCED_ALERT:
     "อย่าเปลี่ยนแปลงอะไรเด็ดขาด, เว้นแต่คุณจะรู้ว่ากำลังทำอะไรอยู่",

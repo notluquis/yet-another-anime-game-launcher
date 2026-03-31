@@ -108,9 +108,6 @@ export const de_DE: typeof zh_CN = {
   SETTING_OPEN_YAAGL_DIR: "YAAGL-Datenverzeichnis öffnen",
   SETTING_YAAGL_VERSION: "YAAGL-Version",
 
-  SETTING_FPS_UNLOCK: "FPS-Limit aufheben",
-  SETTING_FPS_UNLOCK_DEFAULT: "Deaktiviert",
-
   SETTING_ADVANCED: "Erweitert",
   SETTING_ADVANCED_ALERT:
     "ÄNDERN SIE NICHTS, es sei denn, Sie wissen, was Sie tun.",
