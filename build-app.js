@@ -316,7 +316,7 @@ async function ensureSophonBuild() {
         <key>LSEnvironment</key>
         <dict>
             <key>DXMT_METALFX_SPATIAL_SWAPCHAIN</key>
-            <string>1</string>
+            <string>0</string>
         </dict>
     </dict>
     </plist>`

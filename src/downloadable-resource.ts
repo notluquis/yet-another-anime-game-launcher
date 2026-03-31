@@ -94,11 +94,10 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
       dxmtConf,
       [
         "# DXMT configuration — edit freely, this file is only created once.",
-        "# MetalFX Spatial upscaling factor for swapchain output.",
-        "# Requires DXMT_METALFX_SPATIAL_SWAPCHAIN=1 (set in app Info.plist).",
-        "# 1.77 renders at ~57% pixel count and upscales to fill Retina display.",
-        "# Disable Retina mode in YAAGL settings for best results.",
-        "d3d11.metalSpatialUpscaleFactor = 1.77",
+        "# MetalFX Spatial upscaling is disabled by default (factor 1.0).",
+        "# Only useful on Retina displays where backing store is 2x logical.",
+        "# On non-Retina monitors, factor > 1.0 creates wasted GPU work.",
+        "d3d11.metalSpatialUpscaleFactor = 1.0",
       ].join("\n")
     );
   }
