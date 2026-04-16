@@ -61,16 +61,20 @@ pub async fn apply_patch(
         tmp.write_all(&patch_slice)?;
         tmp.flush()?;
 
-        let status = std::process::Command::new(&hpatchz)
+        let output = std::process::Command::new(&hpatchz)
             .args(["-f", &old_file.to_string_lossy(), &tmp.path().to_string_lossy(), &dst_file.to_string_lossy()])
-            .status()
+            .output()
             .with_context(|| format!("run hpatchz ({})", hpatchz.display()))?;
 
-        if !status.success() {
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
             bail!(
-                "hpatchz failed (exit {:?}) patching '{}'",
-                status.code(),
-                old_file.display()
+                "hpatchz exit {:?} on '{}': stderr=<{}> stdout=<{}>",
+                output.status.code(),
+                old_file.display(),
+                stderr.trim(),
+                stdout.trim(),
             );
         }
         Ok(())

@@ -126,7 +126,7 @@ async fn handle_install(
                 send_event(&entry2, "job_end", json!({}));
             }
             Err(e) => {
-                let msg = e.to_string();
+                let msg = format!("{e:#}");
                 tracing::error!("install failed: {msg}");
                 entry2.set_failed(&msg);
                 send_event(&entry2, "error", json!({ "error": msg }));
@@ -172,7 +172,7 @@ async fn handle_repair(
                 send_event(&entry2, "job_end", json!({}));
             }
             Err(e) => {
-                let msg = e.to_string();
+                let msg = format!("{e:#}");
                 tracing::error!("repair failed: {msg}");
                 entry2.set_failed(&msg);
                 send_event(&entry2, "error", json!({ "error": msg }));
@@ -218,7 +218,7 @@ async fn handle_update(
                 send_event(&entry2, "job_end", json!({}));
             }
             Err(e) => {
-                let msg = e.to_string();
+                let msg = format!("{e:#}");
                 tracing::error!("update failed: {msg}");
                 entry2.set_failed(&msg);
                 send_event(&entry2, "error", json!({ "error": msg }));

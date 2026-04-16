@@ -1,5 +1,5 @@
 /// Incremental update via ldiff (hpatchz) + new-file chunk downloads.
-use anyhow::{Context, Result};
+use anyhow::Result;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use serde_json::json;
 use std::collections::HashSet;
@@ -102,6 +102,14 @@ pub async fn perform_update(
         .map(|f| f.filename.as_str())
         .collect();
 
+    // Fast lookup for fallback: filename → FileInfo (from chunks manifest).
+    let chunks_by_name: std::collections::HashMap<&str, &crate::manifest::manifest_proto::FileInfo> =
+        chunks_manifest
+            .files
+            .iter()
+            .map(|f| (f.filename.as_str(), f))
+            .collect();
+
     for file_info in &chunks_manifest.files {
         if !diff_filenames.contains(file_info.filename.as_str()) && file_info.flags != 64 {
             new_files.insert(file_info.filename.clone());
@@ -146,6 +154,39 @@ pub async fn perform_update(
             None => continue,
         };
 
+        // ── Pre-flight: verify source file is in the expected pre-patch state.
+        // If the source is missing, wrong size, or has a different md5 than
+        // `original_hash`, hpatchz will fail. Skip the patch download and queue
+        // a fresh chunk download instead.
+        if !params.predownload {
+            let src_file = gamedir.join(&info.original_name);
+            let source_ok = match tokio::fs::metadata(&src_file).await {
+                Ok(m) => {
+                    m.len() == info.original_size as u64
+                        && !info.original_hash.is_empty()
+                        && verify_md5(&src_file, &info.original_hash)
+                            .await
+                            .unwrap_or(false)
+                }
+                Err(_) => false,
+            };
+
+            if !source_ok {
+                if queue_fallback(&mut new_files, &chunks_by_name, &diff_file.filename) {
+                    send(&entry, "ldiff_patch_fallback", json!({
+                        "filename": diff_file.filename,
+                        "reason": "source_missing_or_mismatch",
+                    }));
+                    continue;
+                } else {
+                    anyhow::bail!(
+                        "patch source invalid for '{}' and no chunk fallback available",
+                        diff_file.filename
+                    );
+                }
+            }
+        }
+
         send(&entry, "ldiff_download_start", json!({ "filename": diff_file.filename }));
 
         // Download the patch file
@@ -184,9 +225,55 @@ pub async fn perform_update(
                 .unwrap_or_default(),
         );
 
-        apply_patch(&src_file, &patch_file_path, info.patch_offset, info.patch_length, &tmp_patched)
-            .await
-            .with_context(|| format!("hpatchz on {}", diff_file.filename))?;
+        let patch_result = apply_patch(
+            &src_file,
+            &patch_file_path,
+            info.patch_offset,
+            info.patch_length,
+            &tmp_patched,
+        )
+        .await;
+
+        if let Err(e) = patch_result {
+            tracing::warn!("hpatchz failed for {}: {:#}", diff_file.filename, e);
+            tokio::fs::remove_file(&tmp_patched).await.ok();
+            tokio::fs::remove_file(&patch_file_path).await.ok();
+            if queue_fallback(&mut new_files, &chunks_by_name, &diff_file.filename) {
+                send(&entry, "ldiff_patch_fallback", json!({
+                    "filename": diff_file.filename,
+                    "reason": format!("hpatchz_error: {:#}", e),
+                }));
+                continue;
+            } else {
+                return Err(e.context(format!(
+                    "hpatchz on {} (no chunk fallback available)",
+                    diff_file.filename
+                )));
+            }
+        }
+
+        // ── Post-verify: make sure the patched output matches the expected md5.
+        // Guards against silent corruption (patch applied but output wrong).
+        if !diff_file.hash.is_empty()
+            && !verify_md5(&tmp_patched, &diff_file.hash)
+                .await
+                .unwrap_or(false)
+        {
+            tokio::fs::remove_file(&tmp_patched).await.ok();
+            tokio::fs::remove_file(&patch_file_path).await.ok();
+            if queue_fallback(&mut new_files, &chunks_by_name, &diff_file.filename) {
+                send(&entry, "ldiff_patch_fallback", json!({
+                    "filename": diff_file.filename,
+                    "reason": "output_hash_mismatch",
+                }));
+                continue;
+            } else {
+                anyhow::bail!(
+                    "patched output md5 mismatch for '{}' and no chunk fallback",
+                    diff_file.filename
+                );
+            }
+        }
 
         // Move patched file to gamedir
         let dest = gamedir.join(&diff_file.filename);
@@ -430,4 +517,19 @@ fn send(entry: &Arc<TaskEntry>, kind: &str, mut payload: serde_json::Value) {
 
 fn send_error(entry: &Arc<TaskEntry>, error: &str) {
     send(entry, "job_error", json!({ "error": error }));
+}
+
+/// Queue a file for fresh chunk download. Returns false if the file is not
+/// present in the chunks manifest (in which case recovery is impossible).
+fn queue_fallback(
+    new_files: &mut std::collections::HashSet<String>,
+    chunks_by_name: &std::collections::HashMap<&str, &crate::manifest::manifest_proto::FileInfo>,
+    filename: &str,
+) -> bool {
+    if chunks_by_name.contains_key(filename) {
+        new_files.insert(filename.to_string());
+        true
+    } else {
+        false
+    }
 }
