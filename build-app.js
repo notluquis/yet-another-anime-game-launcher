@@ -92,7 +92,8 @@ async function ensureSophonBuild() {
   }
 
   const appname = config.cli.binaryName;
-  const binaryName = `${config.cli.binaryName}-mac_x64`;
+  const hostArch = process.arch === "arm64" ? "arm64" : "x64";
+  const binaryName = `${config.cli.binaryName}-mac_${hostArch}`;
 
   // read package.json
   const pkg = await fs.readJSON(path.resolve(process.cwd(), "package.json"));
