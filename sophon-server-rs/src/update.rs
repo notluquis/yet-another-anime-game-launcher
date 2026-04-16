@@ -347,7 +347,12 @@ pub async fn perform_update(
                     tmp_assembled.file_name().unwrap_or_default().to_string_lossy()
                 ));
 
-                // Load chunk-level resume state.
+                // Load chunk-level resume state. Priority:
+                //   1. Existing partial + .chunks sidecar → resume prior download.
+                //   2. Existing file at `dest` (e.g. previous game version) → seed
+                //      chunks whose bytes already match the new manifest's md5,
+                //      avoiding re-download of unchanged regions.
+                //   3. Fresh file.
                 let done_set: HashSet<usize> =
                     if tmp_assembled.exists() && chunks_done_path.exists() {
                         tokio::fs::read_to_string(&chunks_done_path).await
@@ -359,7 +364,29 @@ pub async fn perform_update(
                         let fh = std::fs::File::create(&tmp_assembled)?;
                         fh.set_len(file_info.size as u64)?;
                         tokio::fs::remove_file(&chunks_done_path).await.ok();
-                        HashSet::new()
+
+                        let seeded = seed_from_existing(
+                            dest.clone(),
+                            tmp_assembled.clone(),
+                            file_info.chunks.clone(),
+                        )
+                        .await
+                        .unwrap_or_default();
+
+                        if !seeded.is_empty() {
+                            let mut buf = String::with_capacity(seeded.len() * 4);
+                            for i in &seeded {
+                                buf.push_str(&format!("{i}\n"));
+                            }
+                            tokio::fs::write(&chunks_done_path, buf).await.ok();
+                            send(&entry, "chunk_reuse", json!({
+                                "filename": file_info.filename,
+                                "reused_chunks": seeded.len(),
+                                "total_chunks": file_info.chunks.len(),
+                            }));
+                        }
+
+                        seeded
                     };
 
                 let pre_bytes: u64 = file_info.chunks.iter().enumerate()
@@ -517,6 +544,64 @@ fn send(entry: &Arc<TaskEntry>, kind: &str, mut payload: serde_json::Value) {
 
 fn send_error(entry: &Arc<TaskEntry>, error: &str) {
     send(entry, "job_error", json!({ "error": error }));
+}
+
+/// Scan `source` for chunks whose bytes already match the expected md5 at the
+/// new layout's offsets, and copy those bytes into `target`. Returns the set of
+/// chunk indices that were successfully reused — the download loop skips these.
+///
+/// This is the "Level 1" chunk-reuse optimization: for many asset bundles only a
+/// trailing section changes between versions, so the vast majority of chunks
+/// remain byte-identical at the same offset and can be salvaged from the old
+/// file on disk instead of re-downloaded.
+async fn seed_from_existing(
+    source: std::path::PathBuf,
+    target: std::path::PathBuf,
+    chunks: Vec<crate::manifest::manifest_proto::ChunkInfo>,
+) -> anyhow::Result<std::collections::HashSet<usize>> {
+    tokio::task::spawn_blocking(move || -> anyhow::Result<std::collections::HashSet<usize>> {
+        use std::io::{Read, Seek, SeekFrom, Write};
+
+        let source_len = match std::fs::metadata(&source) {
+            Ok(m) => m.len(),
+            Err(_) => return Ok(std::collections::HashSet::new()),
+        };
+        if source_len == 0 || chunks.is_empty() {
+            return Ok(std::collections::HashSet::new());
+        }
+
+        let mut src = std::fs::File::open(&source)?;
+        let mut dst = std::fs::OpenOptions::new().write(true).open(&target)?;
+        let mut reused = std::collections::HashSet::new();
+        let mut buf = Vec::new();
+
+        for (i, chunk) in chunks.iter().enumerate() {
+            let size = chunk.uncompressed_size as u64;
+            if size == 0 {
+                continue;
+            }
+            let end = chunk.offset.saturating_add(size);
+            if end > source_len {
+                continue;
+            }
+
+            buf.resize(size as usize, 0);
+            src.seek(SeekFrom::Start(chunk.offset))?;
+            if src.read_exact(&mut buf).is_err() {
+                continue;
+            }
+
+            let actual = format!("{:x}", md5::compute(&buf));
+            if actual.eq_ignore_ascii_case(&chunk.md5) {
+                dst.seek(SeekFrom::Start(chunk.offset))?;
+                dst.write_all(&buf)?;
+                reused.insert(i);
+            }
+        }
+
+        Ok(reused)
+    })
+    .await?
 }
 
 /// Queue a file for fresh chunk download. Returns false if the file is not
