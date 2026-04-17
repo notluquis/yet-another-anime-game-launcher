@@ -93,6 +93,9 @@ export const ko_KR: typeof zh_CN = {
   SETTING_METALFX_SPATIAL_PERFORMANCE: "성능 (2.0x)",
   SETTING_RETINA: "Retina 모드",
   SETTING_LEFT_CMD: "왼쪽 CMD를 CTRL로 할당",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "전체 화면에서 디스플레이 캡처",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "게임을 macOS의 Direct 표시 경로로 강제하여 Metal이 WindowServer 합성을 우회하도록 합니다. 지연 시간을 줄이고 Direct→Composited 회귀를 방지하지만, 게임 실행 중 메뉴 바와 보조 디스플레이가 비활성화됩니다.",
   SETTING_TURN_OFF_AC_PATCH: "AC 패치 비활성화",
   SETTING_CUSTOM_RESOLUTION: "사용자 정의 해상도",
   SETTING_SAVE: "저장",

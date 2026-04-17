@@ -90,6 +90,9 @@ export const zh_CN = {
   SETTING_METALFX_SPATIAL_PERFORMANCE: "性能 (2.0x)",
   SETTING_RETINA: "Retina 模式",
   SETTING_LEFT_CMD: "映射左 CMD 键为 CTRL 键",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "全屏时捕获显示器",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "强制游戏走 macOS 的 Direct 直通显示路径，让 Metal 绕过 WindowServer 合成。可降低延迟并避免 Direct→Composited 回退，但运行期间会禁用菜单栏和副显示器。",
   SETTING_TURN_OFF_AC_PATCH: "关闭AC补丁",
   SETTING_CUSTOM_RESOLUTION: "自定义分辨率",
   SETTING_SAVE: "保存",

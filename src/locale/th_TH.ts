@@ -93,6 +93,9 @@ export const th_TH: typeof zh_CN = {
   SETTING_METALFX_SPATIAL_PERFORMANCE: "ประสิทธิภาพ (2.0x)",
   SETTING_RETINA: "โหมด Retina",
   SETTING_LEFT_CMD: "แมปปุ่ม CMD ซ้ายเป็น CTRL",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "จับภาพจอแสดงผลเมื่อเต็มจอ",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "บังคับให้เกมใช้เส้นทางการแสดงผล Direct ของ macOS เพื่อให้ Metal ข้ามการคอมโพสิตของ WindowServer ลดเวลาแฝงและป้องกันการร่วงกลับจาก Direct→Composited แต่จะปิดแถบเมนูและจอเสริมในระหว่างที่เล่น",
   SETTING_TURN_OFF_AC_PATCH: "ปิดการใช้งานแพตช์ AC",
   SETTING_CUSTOM_RESOLUTION: "Custom resolution",
   SETTING_SAVE: "บันทึก",

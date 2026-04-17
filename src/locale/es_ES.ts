@@ -96,6 +96,9 @@ export const es_ES: typeof zh_CN = {
   SETTING_DXVK_HUD_ALL: "Todo",
   SETTING_RETINA: "Modo Retina",
   SETTING_LEFT_CMD: "Asignar CMD izquierdo a CTRL",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Capturar pantallas en pantalla completa",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "Fuerza al juego a usar la ruta de presentaci\u00f3n Directa de macOS para que Metal evite la composici\u00f3n de WindowServer. Reduce la latencia y evita ca\u00eddas Direct\u2192Composited, pero desactiva la barra de men\u00fa y los monitores auxiliares mientras el juego est\u00e1 en ejecuci\u00f3n.",
   SETTING_TURN_OFF_AC_PATCH: "Apagar el AC parche",
   SETTING_CUSTOM_RESOLUTION: "Resolución personalizada",
   SETTING_SAVE: "Guardar",

@@ -95,6 +95,9 @@ export const vi_VN: typeof zh_CN = {
   SETTING_METALFX_SPATIAL_PERFORMANCE: "Hiệu năng (2.0x)",
   SETTING_RETINA: "Chế độ Retina",
   SETTING_LEFT_CMD: "Ánh xạ CMD trái sang CTRL",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Chiếm màn hình khi toàn màn hình",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "Buộc game đi theo đường trình chiếu Direct của macOS để Metal bỏ qua composition của WindowServer. Giảm độ trễ và tránh trường hợp rơi từ Direct→Composited, nhưng sẽ tắt thanh menu và các màn hình phụ trong lúc chơi.",
   SETTING_TURN_OFF_AC_PATCH: "tắt bản vá AC",
   SETTING_CUSTOM_RESOLUTION: "Độ phân giải tùy chỉnh",
   SETTING_SAVE: "Lưu",

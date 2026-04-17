@@ -93,6 +93,9 @@ export const ru_RU: typeof zh_CN = {
   SETTING_DXVK_HUD_ALL: "Всё",
   SETTING_RETINA: "Режим Retina",
   SETTING_LEFT_CMD: "Сопоставить левый CMD с CTRL",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Захват дисплеев в полноэкранном режиме",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "Принудительно переводит игру на путь прямого вывода macOS, чтобы Metal обходил композитор WindowServer. Снижает задержку и устраняет откаты Direct→Composited, но отключает строку меню и дополнительные дисплеи во время игры.",
   SETTING_TURN_OFF_AC_PATCH: "выключи патч AC",
   SETTING_CUSTOM_RESOLUTION: "Пользовательское разрешение",
   SETTING_SAVE: "Сохранить",

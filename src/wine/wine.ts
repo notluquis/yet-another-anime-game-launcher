@@ -114,7 +114,12 @@ export async function createWine(options: {
     await setKey("wine_netbiosname", netbiosname);
   }
 
-  async function setProps(props: { retina: boolean; leftCmd: boolean }) {
+  async function setProps(props: {
+    retina: boolean;
+    leftCmd: boolean;
+    captureDisplaysForFullscreen?: boolean;
+  }) {
+    const cdf = props.captureDisplaysForFullscreen ? "y" : "n";
     const cmd = `@echo off
 cd "%~dp0"
 reg add "HKEY_CURRENT_USER\\Software\\Wine\\Mac Driver" /v RetinaMode /t REG_SZ /d ${
@@ -123,6 +128,8 @@ reg add "HKEY_CURRENT_USER\\Software\\Wine\\Mac Driver" /v RetinaMode /t REG_SZ 
 reg add "HKEY_CURRENT_USER\\Software\\Wine\\Mac Driver" /v LeftCommandIsCtrl /t REG_SZ /d ${
       props.leftCmd ? "y" : "n"
     } /f
+reg add "HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\GenshinImpact.exe\\Mac Driver" /v CaptureDisplaysForFullscreen /t REG_SZ /d ${cdf} /f
+reg add "HKEY_CURRENT_USER\\Software\\Wine\\AppDefaults\\YuanShen.exe\\Mac Driver" /v CaptureDisplaysForFullscreen /t REG_SZ /d ${cdf} /f
 `;
     await writeFile(resolve("winedrv_config.bat"), cmd);
     await exec(

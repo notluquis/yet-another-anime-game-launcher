@@ -95,6 +95,9 @@ export const de_DE: typeof zh_CN = {
   SETTING_METALFX_SPATIAL_PERFORMANCE: "Leistung (2.0x)",
   SETTING_RETINA: "Retina-Modus",
   SETTING_LEFT_CMD: "Linke CMD zu CTRL zuordnen",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Bildschirme im Vollbild erfassen",
+  SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
+    "Zwingt das Spiel auf den Direct-Darstellungspfad von macOS, damit Metal die WindowServer-Komposition umgeht. Reduziert die Latenz und verhindert Direct→Composited-Rückfälle, deaktiviert aber die Menüleiste und zusätzliche Displays während des Spiels.",
   SETTING_TURN_OFF_AC_PATCH: "AC-Patch deaktivieren",
   SETTING_CUSTOM_RESOLUTION: "Benutzerdefinierte Auflösung",
   SETTING_SAVE: "Speichern",
