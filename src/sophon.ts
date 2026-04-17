@@ -1,8 +1,47 @@
-import { log } from "@utils";
+import { log, env, exec, humanFileSize } from "@utils";
 import { logError } from "./utils/structured-logging";
 import { httpFetch } from "@utils";
 import { NetworkError } from "./errors";
 import { LocaleTextKey } from "./locale";
+import { join, basename } from "path-browserify";
+
+const SSD_MIN_FREE_BYTES = 10 * 1024 * 1024 * 1024; // require 10 GiB free on SSD to use it
+
+async function getFreeBytes(path: string): Promise<number> {
+  // macOS `df -k`: columns are Filesystem, 1024-blocks, Used, Available, ...
+  const result = await exec(["df", "-k", path]);
+  const lines = result.stdOut.trim().split("\n");
+  if (lines.length < 2) throw new Error("df: unexpected output");
+  const parts = lines[lines.length - 1].trim().split(/\s+/);
+  const availableKB = parseInt(parts[3], 10);
+  if (!Number.isFinite(availableKB)) throw new Error("df: parse failed");
+  return availableKB * 1024;
+}
+
+/**
+ * Prefer $TMPDIR (SSD on macOS) so ldiff + chunk I/O doesn't thrash the
+ * game disk when the install lives on an external HDD. Falls back to
+ * `<gameDir>/.tmp` if the SSD tempdir is tight on space or anything fails.
+ */
+export async function resolveSophonTempdir(gameDir: string): Promise<string> {
+  const fallback = join(gameDir, ".tmp");
+  try {
+    const tmpdir = (await env("TMPDIR")) || "/tmp";
+    const freeBytes = await getFreeBytes(tmpdir);
+    if (freeBytes < SSD_MIN_FREE_BYTES) {
+      await log(
+        `sophon tempdir: SSD ${tmpdir} has only ${humanFileSize(freeBytes)} free, using ${fallback}`
+      );
+      return fallback;
+    }
+    const candidate = join(tmpdir, "yaagl-sophon", basename(gameDir));
+    await log(`sophon tempdir: using ${candidate} (${humanFileSize(freeBytes)} free)`);
+    return candidate;
+  } catch (err) {
+    await log(`sophon tempdir: resolver failed (${err}), falling back to ${fallback}`);
+    return fallback;
+  }
+}
 
 interface GameOperationOptions {
   gamedir: string;

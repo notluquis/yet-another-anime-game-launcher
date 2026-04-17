@@ -1,5 +1,5 @@
-import { join, basename } from "path-browserify";
-import { Sophon } from "@sophon";
+import { basename, join } from "path-browserify";
+import { Sophon, resolveSophonTempdir } from "@sophon";
 import { CommonUpdateProgram } from "@common-update-ui";
 import { Server } from "@constants";
 import { mkdirp, humanFileSize, setKey, exec, fileOrDirExists } from "@utils";
@@ -16,7 +16,7 @@ async function* downloadAndPatch(
   // We don't have to check about predownloads as the
   // update progress should skip already downloaded files
   // and delete, patch, and download necessary files.
-  const downloadTmp = join(gameDir, ".tmp");
+  const downloadTmp = await resolveSophonTempdir(gameDir);
   const taskId = await sophon.startUpdate({
     gamedir: gameDir,
     game_type: "hk4e",
@@ -153,7 +153,7 @@ async function* predownload(
   sophon: Sophon,
   gameDir: string
 ): CommonUpdateProgram {
-  const downloadTmp = join(gameDir, ".tmp");
+  const downloadTmp = await resolveSophonTempdir(gameDir);
   const taskId = await sophon.startUpdate({
     gamedir: gameDir,
     game_type: "hk4e",

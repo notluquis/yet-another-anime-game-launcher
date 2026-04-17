@@ -1,5 +1,5 @@
-import { join, basename } from "path-browserify";
-import { SophonClient } from "@sophon";
+import { basename } from "path-browserify";
+import { SophonClient, resolveSophonTempdir } from "@sophon";
 import { CommonUpdateProgram } from "@common-update-ui";
 import { Server } from "@constants";
 import { humanFileSize, log } from "@utils";
@@ -19,6 +19,7 @@ export async function* downloadAndInstallGameProgram({
   const taskId = await sophonClient.startInstallation({
     gamedir: gameDir,
     game_type: "hk4e",
+    tempdir: await resolveSophonTempdir(gameDir),
     install_reltype: installReltype,
   });
   log(`Installation task started with ID: ${taskId}`);

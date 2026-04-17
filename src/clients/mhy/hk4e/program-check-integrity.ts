@@ -1,5 +1,5 @@
 import { basename } from "path-browserify";
-import { Sophon } from "@sophon";
+import { Sophon, resolveSophonTempdir } from "@sophon";
 import { CommonUpdateProgram } from "@common-update-ui";
 import { log, humanFileSize } from "@utils";
 
@@ -19,6 +19,7 @@ export async function* checkIntegrityProgram({
   const taskId = await sophon.startRepair({
     gamedir: gameDir,
     game_type: "hk4e",
+    tempdir: await resolveSophonTempdir(gameDir),
     repair_mode: "smart",
   });
 
