@@ -96,6 +96,12 @@ export const ko_KR: typeof zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "전체 화면에서 디스플레이 캡처",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "게임을 macOS의 Direct 표시 경로로 강제하여 Metal이 WindowServer 합성을 우회하도록 합니다. 지연 시간을 줄이고 Direct→Composited 회귀를 방지하지만, 게임 실행 중 메뉴 바와 보조 디스플레이가 비활성화됩니다.",
+  SETTING_LOGGING_SESSION: "디버그 로깅",
+  SETTING_LOGGING_SESSION_OFF: "끄기",
+  SETTING_LOGGING_SESSION_BASIC: "기본 (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "심화 (unified log + Instruments 트레이스)",
+  SETTING_LOGGING_SESSION_DESC:
+    "각 게임 세션의 트레이스를 logs/sessions/에 기록합니다. 기본은 macOS unified logging (Metal, CoreAnimation, WindowServer, Wine)을 사용하며 오버헤드가 거의 없습니다. 심화는 Xcode Instruments의 'Game Performance' 트레이스를 추가합니다 (~분당 100–300 MB; Xcode 필요).",
   SETTING_TURN_OFF_AC_PATCH: "AC 패치 비활성화",
   SETTING_CUSTOM_RESOLUTION: "사용자 정의 해상도",
   SETTING_SAVE: "저장",

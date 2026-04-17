@@ -93,6 +93,12 @@ export const zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "全屏时捕获显示器",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "强制游戏走 macOS 的 Direct 直通显示路径，让 Metal 绕过 WindowServer 合成。可降低延迟并避免 Direct→Composited 回退，但运行期间会禁用菜单栏和副显示器。",
+  SETTING_LOGGING_SESSION: "调试日志",
+  SETTING_LOGGING_SESSION_OFF: "关闭",
+  SETTING_LOGGING_SESSION_BASIC: "基础 (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "深度 (unified log + Instruments 跟踪)",
+  SETTING_LOGGING_SESSION_DESC:
+    "将每次游戏会话的跟踪记录保存到 logs/sessions/。基础使用 macOS unified logging（Metal、CoreAnimation、WindowServer、Wine），开销几乎为零。深度额外启动 Xcode Instruments 的 'Game Performance' 跟踪（约 100–300 MB/分钟；需要 Xcode）。",
   SETTING_TURN_OFF_AC_PATCH: "关闭AC补丁",
   SETTING_CUSTOM_RESOLUTION: "自定义分辨率",
   SETTING_SAVE: "保存",

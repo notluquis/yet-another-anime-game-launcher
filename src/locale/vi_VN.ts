@@ -98,6 +98,12 @@ export const vi_VN: typeof zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Chiếm màn hình khi toàn màn hình",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "Buộc game đi theo đường trình chiếu Direct của macOS để Metal bỏ qua composition của WindowServer. Giảm độ trễ và tránh trường hợp rơi từ Direct→Composited, nhưng sẽ tắt thanh menu và các màn hình phụ trong lúc chơi.",
+  SETTING_LOGGING_SESSION: "Ghi log gỡ lỗi",
+  SETTING_LOGGING_SESSION_OFF: "Tắt",
+  SETTING_LOGGING_SESSION_BASIC: "Cơ bản (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "Sâu (unified log + trace Instruments)",
+  SETTING_LOGGING_SESSION_DESC:
+    "Ghi trace của mỗi phiên chơi vào logs/sessions/. Chế độ Cơ bản dùng unified logging của macOS (Metal, CoreAnimation, WindowServer, Wine) với overhead gần như bằng 0. Chế độ Sâu bổ sung trace 'Game Performance' từ Xcode Instruments (~100–300 MB mỗi phút; cần Xcode).",
   SETTING_TURN_OFF_AC_PATCH: "tắt bản vá AC",
   SETTING_CUSTOM_RESOLUTION: "Độ phân giải tùy chỉnh",
   SETTING_SAVE: "Lưu",

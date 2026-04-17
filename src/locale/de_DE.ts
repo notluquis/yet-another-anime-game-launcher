@@ -98,6 +98,12 @@ export const de_DE: typeof zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Bildschirme im Vollbild erfassen",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "Zwingt das Spiel auf den Direct-Darstellungspfad von macOS, damit Metal die WindowServer-Komposition umgeht. Reduziert die Latenz und verhindert Direct→Composited-Rückfälle, deaktiviert aber die Menüleiste und zusätzliche Displays während des Spiels.",
+  SETTING_LOGGING_SESSION: "Debug-Protokollierung",
+  SETTING_LOGGING_SESSION_OFF: "Aus",
+  SETTING_LOGGING_SESSION_BASIC: "Basis (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "Tief (unified log + Instruments-Trace)",
+  SETTING_LOGGING_SESSION_DESC:
+    "Zeichnet einen Trace jeder Spielsitzung unter logs/sessions/ auf. Basis verwendet das macOS unified logging (Metal, CoreAnimation, WindowServer, Wine) mit nahezu null Overhead. Tief ergänzt einen Xcode-Instruments-Trace 'Game Performance' (~100–300 MB pro Minute; benötigt Xcode).",
   SETTING_TURN_OFF_AC_PATCH: "AC-Patch deaktivieren",
   SETTING_CUSTOM_RESOLUTION: "Benutzerdefinierte Auflösung",
   SETTING_SAVE: "Speichern",

@@ -96,6 +96,12 @@ export const ru_RU: typeof zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Захват дисплеев в полноэкранном режиме",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "Принудительно переводит игру на путь прямого вывода macOS, чтобы Metal обходил композитор WindowServer. Снижает задержку и устраняет откаты Direct→Composited, но отключает строку меню и дополнительные дисплеи во время игры.",
+  SETTING_LOGGING_SESSION: "Отладочное журналирование",
+  SETTING_LOGGING_SESSION_OFF: "Выкл.",
+  SETTING_LOGGING_SESSION_BASIC: "Базовое (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "Глубокое (unified log + трассировка Instruments)",
+  SETTING_LOGGING_SESSION_DESC:
+    "Записывает трассу каждой игровой сессии в logs/sessions/. Базовый режим использует macOS unified logging (Metal, CoreAnimation, WindowServer, Wine) почти без накладных расходов. Глубокий добавляет трассу Xcode Instruments 'Game Performance' (~100–300 МБ в минуту; требуется Xcode).",
   SETTING_TURN_OFF_AC_PATCH: "выключи патч AC",
   SETTING_CUSTOM_RESOLUTION: "Пользовательское разрешение",
   SETTING_SAVE: "Сохранить",

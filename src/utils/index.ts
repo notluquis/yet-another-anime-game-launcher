@@ -4,3 +4,4 @@ export * from "./unix";
 export * from "./command-builder";
 export * from "./structured-logging";
 export * from "./http-client";
+export * from "./logging-session";

@@ -99,6 +99,12 @@ export const es_ES: typeof zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "Capturar pantallas en pantalla completa",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "Fuerza al juego a usar la ruta de presentaci\u00f3n Directa de macOS para que Metal evite la composici\u00f3n de WindowServer. Reduce la latencia y evita ca\u00eddas Direct\u2192Composited, pero desactiva la barra de men\u00fa y los monitores auxiliares mientras el juego est\u00e1 en ejecuci\u00f3n.",
+  SETTING_LOGGING_SESSION: "Registro de depuraci\u00f3n",
+  SETTING_LOGGING_SESSION_OFF: "Desactivado",
+  SETTING_LOGGING_SESSION_BASIC: "B\u00e1sico (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "Profundo (unified log + traza de Instruments)",
+  SETTING_LOGGING_SESSION_DESC:
+    "Graba una traza de cada sesi\u00f3n del juego en logs/sessions/. B\u00e1sico usa el unified logging de macOS (Metal, CoreAnimation, WindowServer, Wine) con overhead casi nulo. Profundo a\u00f1ade una traza 'Game Performance' de Xcode Instruments (~100\u2013300 MB por minuto; requiere Xcode).",
   SETTING_TURN_OFF_AC_PATCH: "Apagar el AC parche",
   SETTING_CUSTOM_RESOLUTION: "Resolución personalizada",
   SETTING_SAVE: "Guardar",

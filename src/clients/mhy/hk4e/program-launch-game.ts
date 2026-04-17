@@ -15,6 +15,9 @@ import {
   build,
   runInSudo,
   getKeyOrDefault,
+  startLoggingSession,
+  stopLoggingSession,
+  LoggingSession,
 } from "../../../utils";
 import { Wine } from "../../../wine";
 import { Config } from "@config";
@@ -68,9 +71,26 @@ cd /d "${wine.toWinePath(gameDir)}"
   yield* patchProgram(gameDir, wine, server, config);
   await mkdirp(resolve("./logs"));
   const yaaglDir = resolve("./");
+  const logfile = resolve(`./logs/game_${Date.now()}.log`);
+  const dxmtVersion = await getKeyOrDefault("installed_dxmt_version", "0.0.0");
+  let loggingSession: LoggingSession | undefined;
+  let loggingEnv: { [key: string]: string } = {};
+  try {
+    const started = await startLoggingSession(config.loggingSession, {
+      config,
+      wineBackend: wine.attributes.renderBackend,
+      gameLogPath: logfile,
+      dxmtVersion,
+    });
+    if (started) {
+      loggingSession = started.session;
+      loggingEnv = started.envOverrides;
+    }
+  } catch (e) {
+    await log(`[logging-session] start failed: ${String(e)}`);
+  }
   try {
     yield ["setStateText", "GAME_RUNNING"];
-    const logfile = resolve(`./logs/game_${Date.now()}.log`);
 
     const gamepolicyctl = "/Applications/Xcode.app/Contents/Developer/usr/bin/gamepolicyctl";
     await exec(
@@ -113,8 +133,7 @@ cd /d "${wine.toWinePath(gameDir)}"
     }
 
     const useNativeDlls = !(
-      wine.attributes.renderBackend == "dxmt" &&
-      gt("0.74.0", await getKeyOrDefault("installed_dxmt_version", "0.0.0"))
+      wine.attributes.renderBackend == "dxmt" && gt("0.74.0", dxmtVersion)
     );
     await wine.exec2(
       config.steamPatch ? "C:\\windows\\system32\\steam.exe" : "cmd",
@@ -141,6 +160,8 @@ cd /d "${wine.toWinePath(gameDir)}"
               HTTPS_PROXY: config.proxyHost,
             }
           : {}),
+        // logging-session overrides come last so they win (DXMT_LOG_PATH etc.)
+        ...loggingEnv,
       },
       logfile
     );
@@ -156,6 +177,14 @@ cd /d "${wine.toWinePath(gameDir)}"
   } catch (e: unknown) {
     // it seems game crashed?
     await log(String(e));
+  } finally {
+    if (loggingSession) {
+      try {
+        await stopLoggingSession(loggingSession);
+      } catch (e) {
+        await log(`[logging-session] stop failed: ${String(e)}`);
+      }
+    }
   }
 
   // await removeFile(resolve("bWh5cHJvdDJfcnVubmluZy5yZWcK.reg"));

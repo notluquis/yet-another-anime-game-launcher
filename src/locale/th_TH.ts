@@ -96,6 +96,12 @@ export const th_TH: typeof zh_CN = {
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN: "จับภาพจอแสดงผลเมื่อเต็มจอ",
   SETTING_CAPTURE_DISPLAYS_FULLSCREEN_DESC:
     "บังคับให้เกมใช้เส้นทางการแสดงผล Direct ของ macOS เพื่อให้ Metal ข้ามการคอมโพสิตของ WindowServer ลดเวลาแฝงและป้องกันการร่วงกลับจาก Direct→Composited แต่จะปิดแถบเมนูและจอเสริมในระหว่างที่เล่น",
+  SETTING_LOGGING_SESSION: "บันทึกดีบัก",
+  SETTING_LOGGING_SESSION_OFF: "ปิด",
+  SETTING_LOGGING_SESSION_BASIC: "พื้นฐาน (unified log)",
+  SETTING_LOGGING_SESSION_DEEP: "ลึก (unified log + Instruments trace)",
+  SETTING_LOGGING_SESSION_DESC:
+    "บันทึกรายละเอียดของแต่ละเซสชันไว้ที่ logs/sessions/ โหมดพื้นฐานใช้ unified logging ของ macOS (Metal, CoreAnimation, WindowServer, Wine) แทบไม่มีภาระต่อระบบ โหมดลึกเพิ่ม Xcode Instruments 'Game Performance' trace (~100–300 MB ต่อนาที; ต้องติดตั้ง Xcode)",
   SETTING_TURN_OFF_AC_PATCH: "ปิดการใช้งานแพตช์ AC",
   SETTING_CUSTOM_RESOLUTION: "Custom resolution",
   SETTING_SAVE: "บันทึก",

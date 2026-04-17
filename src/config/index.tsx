@@ -22,6 +22,7 @@ import { createGameInstallDirConfig } from "./game-install-dir";
 import { createRetinaConfig } from "./retina";
 import { createLeftCmdConfig } from "./left-cmd";
 import { createCaptureDisplaysFullscreenConfig } from "./capture-displays-fullscreen";
+import { createLoggingSessionConfig } from "./logging-session";
 import { createWineDistroConfig } from "./wine-distribution";
 import createLocaleConfig from "./ui-locale";
 
@@ -55,6 +56,7 @@ export async function createConfiguration({
   const [R] = await createRetinaConfig({ locale, config });
   const [LC] = await createLeftCmdConfig({ locale, config });
   const [CDF] = await createCaptureDisplaysFullscreenConfig({ locale, config });
+  const [LOG] = await createLoggingSessionConfig({ locale, config });
   const [GID] = await createGameInstallDirConfig({
     locale,
     config,
@@ -140,6 +142,7 @@ export async function createConfiguration({
                       <R />
                       <LC />
                       <CDF />
+                      <LOG />
                       <Divider />
                       <PRE />
                       <PRH />                      <p class="text-xs select-none">
