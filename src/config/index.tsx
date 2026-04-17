@@ -17,6 +17,7 @@ import { Locale } from "../locale";
 import { Wine } from "../wine";
 import { Config } from "./config-def";
 import { createMetalHUDConfig } from "./metal-hud";
+import { createMetalFXSpatialConfig } from "./metalfx-spatial";
 import { createGameInstallDirConfig } from "./game-install-dir";
 import { createRetinaConfig } from "./retina";
 import { createLeftCmdConfig } from "./left-cmd";
@@ -49,6 +50,7 @@ export async function createConfiguration({
     config,
   });
   const [MH] = await createMetalHUDConfig({ locale, config });
+  const [MFX] = await createMetalFXSpatialConfig({ locale, config });
   const [R] = await createRetinaConfig({ locale, config });
   const [LC] = await createLeftCmdConfig({ locale, config });
   const [GID] = await createGameInstallDirConfig({
@@ -132,6 +134,7 @@ export async function createConfiguration({
                       <GID />
                       <Divider />
                       <MH />
+                      <MFX />
                       <R />
                       <LC />
                       <Divider />

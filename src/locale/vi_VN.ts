@@ -86,6 +86,13 @@ export const vi_VN: typeof zh_CN = {
   SETTING_DXVK_HUD_FPS: "Chỉ hiện FPS",
   SETTING_DXVK_HUD_ALL: "Hiện tất cả thông tin",
   SETTING_MTL_HUD: "Metal HUD",
+  SETTING_METALFX_SPATIAL: "Nâng cấp không gian MetalFX",
+  SETTING_METALFX_SPATIAL_DESC:
+    "Hiển thị game ở độ phân giải thấp hơn và nâng cấp bằng MetalFX. Chỉ hữu ích trên màn hình Retina.",
+  SETTING_METALFX_SPATIAL_OFF: "Tắt (gốc)",
+  SETTING_METALFX_SPATIAL_QUALITY: "Chất lượng (1.3x)",
+  SETTING_METALFX_SPATIAL_BALANCE: "Cân bằng (1.5x)",
+  SETTING_METALFX_SPATIAL_PERFORMANCE: "Hiệu năng (2.0x)",
   SETTING_RETINA: "Chế độ Retina",
   SETTING_LEFT_CMD: "Ánh xạ CMD trái sang CTRL",
   SETTING_TURN_OFF_AC_PATCH: "tắt bản vá AC",

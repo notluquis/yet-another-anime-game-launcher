@@ -86,6 +86,13 @@ export const de_DE: typeof zh_CN = {
   SETTING_DXVK_HUD_FPS: "Nur FPS",
   SETTING_DXVK_HUD_ALL: "Alles",
   SETTING_MTL_HUD: "Metal HUD",
+  SETTING_METALFX_SPATIAL: "MetalFX Spatiales Upscaling",
+  SETTING_METALFX_SPATIAL_DESC:
+    "Rendert das Spiel in geringerer Auflösung und skaliert mit MetalFX hoch. Nur auf Retina-Displays sinnvoll.",
+  SETTING_METALFX_SPATIAL_OFF: "Aus (nativ)",
+  SETTING_METALFX_SPATIAL_QUALITY: "Qualität (1.3x)",
+  SETTING_METALFX_SPATIAL_BALANCE: "Balance (1.5x)",
+  SETTING_METALFX_SPATIAL_PERFORMANCE: "Leistung (2.0x)",
   SETTING_RETINA: "Retina-Modus",
   SETTING_LEFT_CMD: "Linke CMD zu CTRL zuordnen",
   SETTING_TURN_OFF_AC_PATCH: "AC-Patch deaktivieren",

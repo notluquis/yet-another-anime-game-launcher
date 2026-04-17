@@ -84,6 +84,13 @@ export const ko_KR: typeof zh_CN = {
   SETTING_DXVK_HUD_FPS: "FPS만",
   SETTING_DXVK_HUD_ALL: "모든 정보 보기",
   SETTING_MTL_HUD: "Metal HUD",
+  SETTING_METALFX_SPATIAL: "MetalFX 공간 업스케일링",
+  SETTING_METALFX_SPATIAL_DESC:
+    "게임을 낮은 내부 해상도로 렌더링한 후 MetalFX로 업스케일합니다. Retina 디스플레이에서만 의미 있습니다.",
+  SETTING_METALFX_SPATIAL_OFF: "끄기 (네이티브)",
+  SETTING_METALFX_SPATIAL_QUALITY: "품질 (1.3x)",
+  SETTING_METALFX_SPATIAL_BALANCE: "균형 (1.5x)",
+  SETTING_METALFX_SPATIAL_PERFORMANCE: "성능 (2.0x)",
   SETTING_RETINA: "Retina 모드",
   SETTING_LEFT_CMD: "왼쪽 CMD를 CTRL로 할당",
   SETTING_TURN_OFF_AC_PATCH: "AC 패치 비활성화",

@@ -84,6 +84,13 @@ export const th_TH: typeof zh_CN = {
   SETTING_DXVK_HUD_FPS: "แสดงเฉพาะ FPS",
   SETTING_DXVK_HUD_ALL: "แสดงทั้งหมด",
   SETTING_MTL_HUD: "Metal HUD",
+  SETTING_METALFX_SPATIAL: "MetalFX Spatial Upscaling",
+  SETTING_METALFX_SPATIAL_DESC:
+    "เรนเดอร์เกมที่ความละเอียดต่ำกว่าแล้วขยายด้วย MetalFX มีประโยชน์เฉพาะบนจอ Retina",
+  SETTING_METALFX_SPATIAL_OFF: "ปิด (ความละเอียดดั้งเดิม)",
+  SETTING_METALFX_SPATIAL_QUALITY: "คุณภาพ (1.3x)",
+  SETTING_METALFX_SPATIAL_BALANCE: "สมดุล (1.5x)",
+  SETTING_METALFX_SPATIAL_PERFORMANCE: "ประสิทธิภาพ (2.0x)",
   SETTING_RETINA: "โหมด Retina",
   SETTING_LEFT_CMD: "แมปปุ่ม CMD ซ้ายเป็น CTRL",
   SETTING_TURN_OFF_AC_PATCH: "ปิดการใช้งานแพตช์ AC",

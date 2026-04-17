@@ -83,6 +83,13 @@ export const ru_RU: typeof zh_CN = {
   SETTING_DXVK_HUD_NONE: "Ничего",
   SETTING_DXVK_HUD_FPS: "Только FPS",
   SETTING_MTL_HUD: "Оверлэй Metal",
+  SETTING_METALFX_SPATIAL: "Пространственное масштабирование MetalFX",
+  SETTING_METALFX_SPATIAL_DESC:
+    "Отрисовывает игру в меньшем разрешении и масштабирует через MetalFX. Полезно только на Retina-дисплеях.",
+  SETTING_METALFX_SPATIAL_OFF: "Выкл. (нативное)",
+  SETTING_METALFX_SPATIAL_QUALITY: "Качество (1.3x)",
+  SETTING_METALFX_SPATIAL_BALANCE: "Баланс (1.5x)",
+  SETTING_METALFX_SPATIAL_PERFORMANCE: "Производительность (2.0x)",
   SETTING_DXVK_HUD_ALL: "Всё",
   SETTING_RETINA: "Режим Retina",
   SETTING_LEFT_CMD: "Сопоставить левый CMD с CTRL",
