@@ -4,7 +4,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
-pub const WS_CHANNEL_CAPACITY: usize = 256;
+/// Broadcast channel capacity for progress events. Sized so a momentary stall
+/// in the frontend (hundreds of ms) doesn't drop lifecycle events
+/// (file_download_complete, job_end) for a slow consumer — `broadcast` silently
+/// drops the oldest message for lagging receivers once capacity is reached.
+pub const WS_CHANNEL_CAPACITY: usize = 2048;
 
 pub struct TaskEntry {
     pub status: std::sync::Mutex<TaskStatus>,

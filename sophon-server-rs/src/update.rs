@@ -154,6 +154,12 @@ pub async fn perform_update(
             None => continue,
         };
 
+        // Defense-in-depth: manifest comes from HoYo-signed response, but still
+        // reject traversal in the patch artefact names before joining them
+        // with tempdir / gamedir.
+        path_safety_check(&info.patch_name)?;
+        path_safety_check(&info.original_name)?;
+
         // ── Pre-flight: verify source file is in the expected pre-patch state.
         // If the source is missing, wrong size, or has a different md5 than
         // `original_hash`, hpatchz will fail. Skip the patch download and queue
@@ -415,6 +421,7 @@ pub async fn perform_update(
                     let result = write_chunk(
                         &http, &prefix, &chunk.chunk_id,
                         chunk.compressed_size, chunk.offset, Arc::clone(&assembled),
+                        Arc::clone(&entry.cancel),
                     ).await?;
 
                     {

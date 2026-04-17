@@ -2,10 +2,12 @@
 use anyhow::Result;
 use futures_util::{stream, StreamExt, TryStreamExt};
 use serde_json::json;
+use std::collections::HashSet;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
 };
+use tokio::io::AsyncWriteExt;
 
 use crate::downloader::{open_assembled, verify_md5, write_chunk};
 use crate::hoyo::{get_branch, get_build, ids_for, select_category};
@@ -210,20 +212,65 @@ pub async fn perform_repair(
                     tokio::fs::create_dir_all(p).await?;
                 }
 
+                // Sidecar with chunk indices already written — lets a crashed
+                // repair resume instead of redownloading the whole file.
+                let chunks_done_path = tmp_assembled.with_file_name(format!(
+                    "{}.chunks",
+                    tmp_assembled.file_name().unwrap_or_default().to_string_lossy()
+                ));
+
+                let fresh = !(tmp_assembled.exists() && chunks_done_path.exists());
+                let done_set: HashSet<usize> = if !fresh {
+                    tokio::fs::read_to_string(&chunks_done_path).await
+                        .unwrap_or_default()
+                        .lines()
+                        .filter_map(|l| l.trim().parse().ok())
+                        .collect()
+                } else {
+                    tokio::fs::remove_file(&chunks_done_path).await.ok();
+                    HashSet::new()
+                };
+
                 send(&entry, "file_download_start", json!({ "filename": file_info.filename }));
 
-                let assembled = open_assembled(&tmp_assembled, file_info.size as u64, true)?;
+                let assembled = open_assembled(&tmp_assembled, file_info.size as u64, fresh)?;
+
+                let pre_bytes: u64 = file_info.chunks.iter().enumerate()
+                    .filter(|(i, _)| done_set.contains(i))
+                    .map(|(_, c)| c.compressed_size as u64)
+                    .sum();
+                if pre_bytes > 0 {
+                    db.fetch_add(pre_bytes, Ordering::Relaxed);
+                    send(&entry, "file_download_resumed", json!({
+                        "filename": file_info.filename,
+                        "chunks_done": done_set.len(),
+                        "chunks_total": file_info.chunks.len(),
+                        "pre_downloaded_bytes": pre_bytes,
+                    }));
+                }
 
                 for (i, chunk) in file_info.chunks.iter().enumerate() {
                     if entry.is_cancelled() {
                         return Err(anyhow::anyhow!("cancelled"));
                     }
 
+                    if done_set.contains(&i) {
+                        continue;
+                    }
+
                     let result = write_chunk(
                         &http, &prefix, &chunk.chunk_id,
                         chunk.compressed_size, chunk.offset,
                         Arc::clone(&assembled),
+                        Arc::clone(&entry.cancel),
                     ).await?;
+
+                    {
+                        let mut f = tokio::fs::OpenOptions::new()
+                            .create(true).append(true)
+                            .open(&chunks_done_path).await?;
+                        f.write_all(format!("{i}\n").as_bytes()).await?;
+                    }
 
                     let cur = db.fetch_add(chunk.compressed_size as u64, Ordering::Relaxed)
                         + chunk.compressed_size as u64;
@@ -259,8 +306,11 @@ pub async fn perform_repair(
 
                 if !verify_md5(&tmp_assembled, &file_info.md5).await? {
                     tokio::fs::remove_file(&tmp_assembled).await.ok();
+                    tokio::fs::remove_file(&chunks_done_path).await.ok();
                     anyhow::bail!("MD5 mismatch after repair for: {}", file_info.filename);
                 }
+
+                tokio::fs::remove_file(&chunks_done_path).await.ok();
 
                 if let Some(parent) = dest.parent() {
                     tokio::fs::create_dir_all(parent).await?;

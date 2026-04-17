@@ -12,8 +12,15 @@
 use anyhow::{bail, Context, Result};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tokio::io::AsyncWriteExt;
+
+/// Max HTTP retries for a single chunk download on transient failure
+/// (network error, 5xx, partial body, decompress error).
+const CHUNK_MAX_ATTEMPTS: u32 = 4;
+/// Base backoff in milliseconds — actual delay is `BASE * 2^attempt`.
+const CHUNK_BACKOFF_BASE_MS: u64 = 300;
 
 /// Shared handle to an assembled output file. The lock is held only during the
 /// seek-and-write of a single chunk, so parallel *tasks* (which each own their
@@ -94,6 +101,11 @@ pub async fn download_resumable(
 /// syscalls per chunk (hundreds per file). The lock is held only for the
 /// seek-and-write; serial inside a task, so no contention.
 ///
+/// Retries transient failures up to [`CHUNK_MAX_ATTEMPTS`] times with
+/// exponential backoff. The `cancel` flag is polled during the streamed
+/// download so a cancelled task aborts within ~one TCP packet instead of
+/// waiting for the whole chunk body.
+///
 /// Returns a [`ChunkWriteResult`] with byte count and per-phase timing.
 pub async fn write_chunk(
     http: &reqwest::Client,
@@ -102,13 +114,59 @@ pub async fn write_chunk(
     compressed_size: u32,
     offset: u64,
     file: AssembledFile,
+    cancel: Arc<AtomicBool>,
 ) -> Result<ChunkWriteResult> {
     let url = format!("{}/{}", chunk_url_prefix, chunk_id);
 
-    // ── Download compressed bytes directly into memory ───────────────────────
+    let mut last_err: Option<anyhow::Error> = None;
+    for attempt in 0..CHUNK_MAX_ATTEMPTS {
+        if cancel.load(Ordering::Relaxed) {
+            bail!("cancelled");
+        }
+
+        if attempt > 0 {
+            let backoff = CHUNK_BACKOFF_BASE_MS * (1u64 << (attempt - 1));
+            tracing::warn!(
+                "chunk {chunk_id}: attempt {}/{} after error: {:#} (backoff {}ms)",
+                attempt + 1,
+                CHUNK_MAX_ATTEMPTS,
+                last_err.as_ref().unwrap(),
+                backoff,
+            );
+            tokio::time::sleep(std::time::Duration::from_millis(backoff)).await;
+        }
+
+        match try_write_chunk(http, &url, chunk_id, compressed_size, offset, &file, &cancel).await {
+            Ok(result) => return Ok(result),
+            Err(e) => {
+                if e.to_string() == "cancelled" {
+                    return Err(e);
+                }
+                last_err = Some(e);
+            }
+        }
+    }
+
+    Err(last_err.unwrap_or_else(|| anyhow::anyhow!("chunk {chunk_id}: exhausted retries")))
+}
+
+/// Single attempt — downloads the body streaming, decompresses, writes at
+/// `offset`. Any error (network, body size mismatch, zstd, IO) is returned
+/// so [`write_chunk`] can decide whether to retry.
+async fn try_write_chunk(
+    http: &reqwest::Client,
+    url: &str,
+    chunk_id: &str,
+    compressed_size: u32,
+    offset: u64,
+    file: &AssembledFile,
+    cancel: &Arc<AtomicBool>,
+) -> Result<ChunkWriteResult> {
+    use futures_util::StreamExt;
+
     let t_dl = std::time::Instant::now();
     let response = http
-        .get(&url)
+        .get(url)
         .send()
         .await
         .with_context(|| format!("GET {url}"))?;
@@ -118,25 +176,40 @@ pub async fn write_chunk(
         code => bail!("Unexpected HTTP {code} for {url}"),
     }
 
-    let compressed_bytes = response
-        .bytes()
-        .await
-        .with_context(|| format!("read body {url}"))?;
+    let mut buf: Vec<u8> = Vec::with_capacity(compressed_size as usize);
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        if cancel.load(Ordering::Relaxed) {
+            bail!("cancelled");
+        }
+        let bytes = chunk.with_context(|| format!("stream body {url}"))?;
+        buf.extend_from_slice(&bytes);
+        if buf.len() > compressed_size as usize {
+            bail!(
+                "chunk {chunk_id}: overran expected size {}",
+                compressed_size
+            );
+        }
+    }
 
-    if compressed_bytes.len() != compressed_size as usize {
+    if buf.len() != compressed_size as usize {
         bail!(
             "chunk {chunk_id}: expected {} bytes, got {}",
             compressed_size,
-            compressed_bytes.len()
+            buf.len()
         );
     }
     let download_ms = t_dl.elapsed().as_millis() as u64;
 
-    // ── Decompress + write on the blocking thread pool ───────────────────────
+    if cancel.load(Ordering::Relaxed) {
+        bail!("cancelled");
+    }
+
+    let file = Arc::clone(file);
     let (written, write_ms) = tokio::task::spawn_blocking(move || -> Result<(usize, u64)> {
         let t_wr = std::time::Instant::now();
 
-        let decompressed = zstd::decode_all(compressed_bytes.as_ref())
+        let decompressed = zstd::decode_all(buf.as_slice())
             .context("zstd decompress chunk")?;
 
         let n = decompressed.len();

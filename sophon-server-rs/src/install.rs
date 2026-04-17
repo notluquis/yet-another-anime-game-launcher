@@ -210,6 +210,7 @@ pub async fn perform_install(
                         chunk.compressed_size,
                         chunk.offset,
                         Arc::clone(&assembled),
+                        Arc::clone(&entry.cancel),
                     )
                     .await
                     .with_context(|| format!("chunk {} of {}", i + 1, file_info.filename))?;
