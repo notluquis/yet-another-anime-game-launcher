@@ -131,20 +131,20 @@ export function createCommonUpdateUI(
                 animation: "pulse-glow 3s ease-in-out infinite",
               }}
             >
-              <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-2xl opacity-30"></div>
-              <div class="relative bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/20">
+              <div class="absolute inset-0 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-2xl opacity-30"></div>
+              <div class="relative bg-linear-to-b from-white/10 to-white/5 backdrop-blur-lg rounded-2xl p-4 border border-white/20">
                 <Image boxSize={280} src={UPDATE_UI_IMAGE} class="drop-shadow-lg" />
               </div>
             </div>
           </Center>
 
           {/* Status Card */}
-          <div class="bg-gradient-to-r from-black/40 to-black/20 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-2xl">
+          <div class="bg-linear-to-r from-black/40 to-black/20 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-2xl">
             <Show
               when={downloadInfo()}
               fallback={
                 <div style="text-align: center">
-                  <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-lg">
+                  <h1 class="text-2xl font-bold bg-linear-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-lg">
                     {statusText()}
                   </h1>
                 </div>
@@ -154,7 +154,7 @@ export function createCommonUpdateUI(
                 <div>
                   {/* Header row: status + ETA */}
                   <div class="flex items-baseline justify-between mb-3">
-                    <h1 class="text-xl font-bold bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-lg">
+                    <h1 class="text-xl font-bold bg-linear-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent drop-shadow-lg">
                       {statusText()}
                     </h1>
                     <Show when={eta()}>
@@ -203,7 +203,7 @@ export function createCommonUpdateUI(
                 <Center>
                   <Button
                     onClick={confirmRestart}
-                    class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                    class="bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                   >
                     {locale.get("RESTART_TO_INSTALL")}
                   </Button>
@@ -217,12 +217,12 @@ export function createCommonUpdateUI(
                 <Progress
                   value={progress()}
                   indeterminate={progress() == 0}
-                  class="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-full overflow-hidden"
+                  class="bg-linear-to-r from-blue-900/30 to-purple-900/30 rounded-full overflow-hidden"
                 >
                   <ProgressIndicator
                     animated
                     striped
-                    class="bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/30"
+                    class="bg-linear-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/30"
                   />
                 </Progress>
               </div>
