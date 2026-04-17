@@ -7,7 +7,7 @@ use std::sync::{
     Arc,
 };
 
-use crate::downloader::{verify_md5, write_chunk};
+use crate::downloader::{open_assembled, verify_md5, write_chunk};
 use crate::hoyo::{get_branch, get_build, ids_for, select_category};
 use crate::manifest::{download_manifest, path_safety_check, Manifest};
 use crate::models::RepairParams;
@@ -212,10 +212,7 @@ pub async fn perform_repair(
 
                 send(&entry, "file_download_start", json!({ "filename": file_info.filename }));
 
-                {
-                    let fh = std::fs::File::create(&tmp_assembled)?;
-                    fh.set_len(file_info.size as u64)?;
-                }
+                let assembled = open_assembled(&tmp_assembled, file_info.size as u64, true)?;
 
                 for (i, chunk) in file_info.chunks.iter().enumerate() {
                     if entry.is_cancelled() {
@@ -225,7 +222,7 @@ pub async fn perform_repair(
                     let result = write_chunk(
                         &http, &prefix, &chunk.chunk_id,
                         chunk.compressed_size, chunk.offset,
-                        &tmp_assembled,
+                        Arc::clone(&assembled),
                     ).await?;
 
                     let cur = db.fetch_add(chunk.compressed_size as u64, Ordering::Relaxed)
@@ -257,6 +254,8 @@ pub async fn perform_repair(
                         },
                     }));
                 }
+
+                drop(assembled);
 
                 if !verify_md5(&tmp_assembled, &file_info.md5).await? {
                     tokio::fs::remove_file(&tmp_assembled).await.ok();

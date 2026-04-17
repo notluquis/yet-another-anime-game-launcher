@@ -5,7 +5,8 @@ import { NetworkError } from "./errors";
 import { LocaleTextKey } from "./locale";
 import { join, basename } from "path-browserify";
 
-const SSD_MIN_FREE_BYTES = 10 * 1024 * 1024 * 1024; // require 10 GiB free on SSD to use it
+const SSD_MIN_FREE_FLOOR = 10 * 1024 * 1024 * 1024; // absolute floor: 10 GiB
+const SSD_HEADROOM_FRACTION = 0.15; // reserve 15% of expected-size over the working set
 
 async function getFreeBytes(path: string): Promise<number> {
   // macOS `df -k`: columns are Filesystem, 1024-blocks, Used, Available, ...
@@ -22,20 +23,31 @@ async function getFreeBytes(path: string): Promise<number> {
  * Prefer $TMPDIR (SSD on macOS) so ldiff + chunk I/O doesn't thrash the
  * game disk when the install lives on an external HDD. Falls back to
  * `<gameDir>/.tmp` if the SSD tempdir is tight on space or anything fails.
+ *
+ * Pass `expectedBytes` (install/update size) to size-check dynamically —
+ * for Genshin's ~100 GiB installs the 10 GiB floor is nowhere near enough,
+ * so we require max(floor, expectedBytes * headroom).
  */
-export async function resolveSophonTempdir(gameDir: string): Promise<string> {
+export async function resolveSophonTempdir(
+  gameDir: string,
+  expectedBytes = 0
+): Promise<string> {
   const fallback = join(gameDir, ".tmp");
+  const required = Math.max(
+    SSD_MIN_FREE_FLOOR,
+    Math.ceil(expectedBytes * SSD_HEADROOM_FRACTION)
+  );
   try {
     const tmpdir = (await env("TMPDIR")) || "/tmp";
     const freeBytes = await getFreeBytes(tmpdir);
-    if (freeBytes < SSD_MIN_FREE_BYTES) {
+    if (freeBytes < required) {
       await log(
-        `sophon tempdir: SSD ${tmpdir} has only ${humanFileSize(freeBytes)} free, using ${fallback}`
+        `sophon tempdir: SSD ${tmpdir} has ${humanFileSize(freeBytes)} free, needs ${humanFileSize(required)}, using ${fallback}`
       );
       return fallback;
     }
     const candidate = join(tmpdir, "yaagl-sophon", basename(gameDir));
-    await log(`sophon tempdir: using ${candidate} (${humanFileSize(freeBytes)} free)`);
+    await log(`sophon tempdir: using ${candidate} (${humanFileSize(freeBytes)} free, ${humanFileSize(required)} required)`);
     return candidate;
   } catch (err) {
     await log(`sophon tempdir: resolver failed (${err}), falling back to ${fallback}`);
@@ -164,22 +176,25 @@ export class SophonClient {
     const ws = new WebSocket(`${this.wsUrl}/ws/${taskId}`);
 
     const messageQueue: SophonProgressEvent[] = [];
-    let isConnected = false;
     let isCompleted = false;
     let error: string | null = null;
-    let messageResolver: ((value: unknown) => void) | null = null;
-
-    ws.onopen = () => {
-      isConnected = true;
+    let wake: (() => void) | null = null;
+    const nudge = () => {
+      if (wake) {
+        const w = wake;
+        wake = null;
+        w();
+      }
     };
+
+    const opened = new Promise<void>((resolve, reject) => {
+      ws.onopen = () => resolve();
+      ws.onerror = () => reject(new Error("WebSocket connection error"));
+    });
 
     ws.onmessage = event => {
       const message = JSON.parse(event.data) as SophonProgressEvent;
       messageQueue.push(message);
-
-      if (messageResolver) {
-        messageResolver(null);
-      }
 
       if (
         message.type === "job_end" ||
@@ -191,43 +206,44 @@ export class SophonClient {
           error = message.error || "Unknown error";
         }
       }
-    };
-
-    ws.onerror = event => {
-      error = "WebSocket connection error";
-      isCompleted = true;
+      nudge();
     };
 
     ws.onclose = () => {
       isCompleted = true;
+      nudge();
     };
 
-    // Wait for connection
-    while (!isConnected && !error) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
+    await opened;
+    // After onopen, replace onerror so runtime errors mark completion
+    // instead of trying to reject a settled promise.
+    ws.onerror = () => {
+      error = "WebSocket connection error";
+      isCompleted = true;
+      nudge();
+    };
 
-    if (error) {
-      throw new Error(error);
-    }
+    try {
+      while (!isCompleted || messageQueue.length > 0) {
+        if (messageQueue.length > 0) {
+          const message = messageQueue.shift()!;
+          yield message;
 
-    while (!isCompleted || messageQueue.length > 0) {
-      if (messageQueue.length > 0) {
-        // Array is not empty. message is not null.
-        const message = messageQueue.shift()!;
-        yield message;
-
-        if (message.type === "error" || message.type === "job_error") {
-          throw new Error(message.error || "Operation failed");
+          if (message.type === "error" || message.type === "job_error") {
+            throw new Error(message.error || "Operation failed");
+          }
+        } else {
+          await new Promise<void>(resolve => {
+            wake = resolve;
+          });
         }
-      } else {
-        await new Promise(resolve => {
-          messageResolver = resolve;
-        });
       }
+      if (error) {
+        throw new Error(error);
+      }
+    } finally {
+      ws.close();
     }
-
-    ws.close();
   }
 
   async cancelOperation(taskId: string): Promise<void> {

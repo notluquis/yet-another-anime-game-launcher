@@ -1,17 +1,18 @@
 import { basename } from "path-browserify";
 import { SophonClient, resolveSophonTempdir } from "@sophon";
 import { CommonUpdateProgram } from "@common-update-ui";
-import { Server } from "@constants";
 import { humanFileSize, log } from "@utils";
 
 export async function* downloadAndInstallGameProgram({
   sophonClient,
   gameDir,
   installReltype,
+  expectedBytes = 0,
 }: {
   sophonClient: SophonClient;
   gameDir: string;
   installReltype: string;
+  expectedBytes?: number;
 }): CommonUpdateProgram {
   yield ["setUndeterminedProgress"];
   log("Starting game installation process...");
@@ -19,7 +20,7 @@ export async function* downloadAndInstallGameProgram({
   const taskId = await sophonClient.startInstallation({
     gamedir: gameDir,
     game_type: "hk4e",
-    tempdir: await resolveSophonTempdir(gameDir),
+    tempdir: await resolveSophonTempdir(gameDir, expectedBytes),
     install_reltype: installReltype,
   });
   log(`Installation task started with ID: ${taskId}`);

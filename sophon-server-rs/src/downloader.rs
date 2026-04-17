@@ -12,7 +12,14 @@
 use anyhow::{bail, Context, Result};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use tokio::io::AsyncWriteExt;
+
+/// Shared handle to an assembled output file. The lock is held only during the
+/// seek-and-write of a single chunk, so parallel *tasks* (which each own their
+/// own file) never contend; it exists because `spawn_blocking` requires the
+/// inner closure to be `'static + Send`.
+pub type AssembledFile = Arc<Mutex<std::fs::File>>;
 
 /// Timings returned by [`write_chunk`] for bottleneck diagnosis.
 pub struct ChunkWriteResult {
@@ -80,12 +87,12 @@ pub async fn download_resumable(
 }
 
 /// Download a compressed chunk directly into memory, decompress it, and write
-/// at the given byte `offset` inside `assembled_file`.
+/// at the given byte `offset` inside the caller-supplied `file`.
 ///
-/// Unlike the previous implementation this never writes the compressed bytes to
-/// disk, saving two I/O operations per chunk (write compressed + read
-/// compressed + delete → gone).  The only disk operation is the final
-/// seek-and-write of the decompressed payload.
+/// The caller is responsible for opening the assembled file once at task start
+/// and pre-allocating its final size, avoiding a pair of `open()`/`close()`
+/// syscalls per chunk (hundreds per file). The lock is held only for the
+/// seek-and-write; serial inside a task, so no contention.
 ///
 /// Returns a [`ChunkWriteResult`] with byte count and per-phase timing.
 pub async fn write_chunk(
@@ -94,7 +101,7 @@ pub async fn write_chunk(
     chunk_id: &str,
     compressed_size: u32,
     offset: u64,
-    assembled_file: &Path,
+    file: AssembledFile,
 ) -> Result<ChunkWriteResult> {
     let url = format!("{}/{}", chunk_url_prefix, chunk_id);
 
@@ -126,7 +133,6 @@ pub async fn write_chunk(
     let download_ms = t_dl.elapsed().as_millis() as u64;
 
     // ── Decompress + write on the blocking thread pool ───────────────────────
-    let assembled_file2 = assembled_file.to_path_buf();
     let (written, write_ms) = tokio::task::spawn_blocking(move || -> Result<(usize, u64)> {
         let t_wr = std::time::Instant::now();
 
@@ -134,11 +140,9 @@ pub async fn write_chunk(
             .context("zstd decompress chunk")?;
 
         let n = decompressed.len();
-        let mut fh = std::fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(&assembled_file2)
-            .with_context(|| format!("open assembled {}", assembled_file2.display()))?;
+        let mut fh = file
+            .lock()
+            .map_err(|_| anyhow::anyhow!("assembled file mutex poisoned"))?;
         fh.seek(SeekFrom::Start(offset))?;
         fh.write_all(&decompressed)?;
 
@@ -153,12 +157,46 @@ pub async fn write_chunk(
     })
 }
 
-/// Verify the MD5 of a file.
+/// Open the assembled output file with pre-allocated size, or reuse an existing
+/// partial (same length) for chunk-level resume.
+pub fn open_assembled(path: &Path, size: u64, fresh: bool) -> Result<AssembledFile> {
+    let file = if fresh {
+        let f = std::fs::File::create(path)
+            .with_context(|| format!("create assembled {}", path.display()))?;
+        f.set_len(size)?;
+        f
+    } else {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .open(path)
+            .with_context(|| format!("open assembled {}", path.display()))?
+    };
+    Ok(Arc::new(Mutex::new(file)))
+}
+
+/// Verify the MD5 of a file without loading it entirely in memory.
+///
+/// Streams the file through an md5 context in 1 MiB blocks on the blocking
+/// thread pool, so the peak memory is bounded regardless of file size.
 pub async fn verify_md5(path: &Path, expected: &str) -> Result<bool> {
-    let data = tokio::fs::read(path).await?;
-    let digest = tokio::task::spawn_blocking(move || {
-        format!("{:x}", md5::compute(&data))
+    const BLOCK: usize = 1024 * 1024;
+    let path = path.to_path_buf();
+    let expected = expected.to_ascii_lowercase();
+    tokio::task::spawn_blocking(move || -> Result<bool> {
+        use std::io::Read;
+        let mut file = std::fs::File::open(&path)
+            .with_context(|| format!("open {}", path.display()))?;
+        let mut ctx = md5::Context::new();
+        let mut buf = vec![0u8; BLOCK];
+        loop {
+            let n = file.read(&mut buf)?;
+            if n == 0 {
+                break;
+            }
+            ctx.consume(&buf[..n]);
+        }
+        let digest = format!("{:x}", ctx.compute());
+        Ok(digest == expected)
     })
-    .await?;
-    Ok(digest == expected)
+    .await?
 }

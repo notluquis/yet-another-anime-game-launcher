@@ -9,7 +9,7 @@ use std::sync::{
 };
 use tokio::io::AsyncWriteExt;
 
-use crate::downloader::{download_resumable, verify_md5, write_chunk};
+use crate::downloader::{download_resumable, open_assembled, verify_md5, write_chunk};
 use crate::hpatchz::apply_patch;
 use crate::hoyo::{get_branch, get_build, get_patch_build, ids_for, select_category};
 use crate::manifest::{
@@ -28,7 +28,7 @@ pub async fn perform_update(
 ) -> Result<()> {
     let gamedir = params.gamedir.clone();
     let tempdir = params.tempdir.clone();
-    let ldiff_dir = gamedir.join("ldiff");
+    let ldiff_dir = tempdir.join("ldiff");
 
     tokio::fs::create_dir_all(&tempdir).await?;
     tokio::fs::create_dir_all(&ldiff_dir).await?;
@@ -231,6 +231,7 @@ pub async fn perform_update(
             info.patch_offset,
             info.patch_length,
             &tmp_patched,
+            &tempdir,
         )
         .await;
 
@@ -353,41 +354,46 @@ pub async fn perform_update(
                 //      chunks whose bytes already match the new manifest's md5,
                 //      avoiding re-download of unchanged regions.
                 //   3. Fresh file.
-                let done_set: HashSet<usize> =
-                    if tmp_assembled.exists() && chunks_done_path.exists() {
-                        tokio::fs::read_to_string(&chunks_done_path).await
-                            .unwrap_or_default()
-                            .lines()
-                            .filter_map(|l| l.trim().parse().ok())
-                            .collect()
-                    } else {
+                let fresh = !(tmp_assembled.exists() && chunks_done_path.exists());
+                let done_set: HashSet<usize> = if !fresh {
+                    tokio::fs::read_to_string(&chunks_done_path).await
+                        .unwrap_or_default()
+                        .lines()
+                        .filter_map(|l| l.trim().parse().ok())
+                        .collect()
+                } else {
+                    {
                         let fh = std::fs::File::create(&tmp_assembled)?;
                         fh.set_len(file_info.size as u64)?;
-                        tokio::fs::remove_file(&chunks_done_path).await.ok();
+                    }
+                    tokio::fs::remove_file(&chunks_done_path).await.ok();
 
-                        let seeded = seed_from_existing(
-                            dest.clone(),
-                            tmp_assembled.clone(),
-                            file_info.chunks.clone(),
-                        )
-                        .await
-                        .unwrap_or_default();
+                    let seeded = seed_from_existing(
+                        dest.clone(),
+                        tmp_assembled.clone(),
+                        file_info.chunks.clone(),
+                    )
+                    .await
+                    .unwrap_or_default();
 
-                        if !seeded.is_empty() {
-                            let mut buf = String::with_capacity(seeded.len() * 4);
-                            for i in &seeded {
-                                buf.push_str(&format!("{i}\n"));
-                            }
-                            tokio::fs::write(&chunks_done_path, buf).await.ok();
-                            send(&entry, "chunk_reuse", json!({
-                                "filename": file_info.filename,
-                                "reused_chunks": seeded.len(),
-                                "total_chunks": file_info.chunks.len(),
-                            }));
+                    if !seeded.is_empty() {
+                        let mut buf = String::with_capacity(seeded.len() * 4);
+                        for i in &seeded {
+                            buf.push_str(&format!("{i}\n"));
                         }
+                        tokio::fs::write(&chunks_done_path, buf).await.ok();
+                        send(&entry, "chunk_reuse", json!({
+                            "filename": file_info.filename,
+                            "reused_chunks": seeded.len(),
+                            "total_chunks": file_info.chunks.len(),
+                        }));
+                    }
 
-                        seeded
-                    };
+                    seeded
+                };
+
+                // Open once for the whole chunk loop (even resume reopens here).
+                let assembled = open_assembled(&tmp_assembled, file_info.size as u64, false)?;
 
                 let pre_bytes: u64 = file_info.chunks.iter().enumerate()
                     .filter(|(i, _)| done_set.contains(i))
@@ -408,7 +414,7 @@ pub async fn perform_update(
 
                     let result = write_chunk(
                         &http, &prefix, &chunk.chunk_id,
-                        chunk.compressed_size, chunk.offset, &tmp_assembled,
+                        chunk.compressed_size, chunk.offset, Arc::clone(&assembled),
                     ).await?;
 
                     {
@@ -447,6 +453,9 @@ pub async fn perform_update(
                         },
                     }));
                 }
+
+                // Flush writes by dropping the writer before hashing.
+                drop(assembled);
 
                 // Verify MD5 before moving — guards against both download corruption
                 // and stale resumed files with wrong content.

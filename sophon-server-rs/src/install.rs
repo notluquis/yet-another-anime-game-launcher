@@ -9,7 +9,7 @@ use std::sync::{
 };
 use tokio::io::AsyncWriteExt;
 
-use crate::downloader::{verify_md5, write_chunk};
+use crate::downloader::{open_assembled, verify_md5, write_chunk};
 use crate::hoyo::{get_branch, get_build, ids_for, select_category};
 use crate::manifest::{download_manifest, path_safety_check, update_config_version, Manifest};
 use crate::models::InstallParams;
@@ -162,20 +162,20 @@ pub async fn perform_install(
 
                 // Load resume state: valid only when both the assembled file AND
                 // the sidecar exist. Otherwise start fresh (truncate + pre-alloc).
-                let done_set: HashSet<usize> =
-                    if tmp_assembled.exists() && chunks_done_path.exists() {
-                        tokio::fs::read_to_string(&chunks_done_path).await
-                            .unwrap_or_default()
-                            .lines()
-                            .filter_map(|l| l.trim().parse().ok())
-                            .collect()
-                    } else {
-                        let fh = std::fs::File::create(&tmp_assembled)
-                            .with_context(|| format!("create {}", tmp_assembled.display()))?;
-                        fh.set_len(file_info.size as u64)?;
-                        tokio::fs::remove_file(&chunks_done_path).await.ok();
-                        HashSet::new()
-                    };
+                let fresh = !(tmp_assembled.exists() && chunks_done_path.exists());
+                let done_set: HashSet<usize> = if !fresh {
+                    tokio::fs::read_to_string(&chunks_done_path).await
+                        .unwrap_or_default()
+                        .lines()
+                        .filter_map(|l| l.trim().parse().ok())
+                        .collect()
+                } else {
+                    tokio::fs::remove_file(&chunks_done_path).await.ok();
+                    HashSet::new()
+                };
+
+                // Open once for the whole chunk loop.
+                let assembled = open_assembled(&tmp_assembled, file_info.size as u64, fresh)?;
 
                 // Pre-credit already-downloaded chunks to the global counter so
                 // the overall progress bar starts at the correct position.
@@ -209,7 +209,7 @@ pub async fn perform_install(
                         &chunk.chunk_id,
                         chunk.compressed_size,
                         chunk.offset,
-                        &tmp_assembled,
+                        Arc::clone(&assembled),
                     )
                     .await
                     .with_context(|| format!("chunk {} of {}", i + 1, file_info.filename))?;
@@ -260,6 +260,10 @@ pub async fn perform_install(
                         },
                     }));
                 }
+
+                // Close the writer before hashing so the contents are flushed
+                // to the OS page cache and observable by the read-only open.
+                drop(assembled);
 
                 // Verify MD5 — catches both download corruption and stale resumed files.
                 if !verify_md5(&tmp_assembled, &file_info.md5).await? {

@@ -53,7 +53,6 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> Self {
         let http = reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
             .timeout(std::time::Duration::from_secs(60))
             .build()
             .expect("Failed to build HTTP client");

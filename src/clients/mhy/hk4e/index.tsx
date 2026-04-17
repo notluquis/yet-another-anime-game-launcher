@@ -164,6 +164,7 @@ export async function createHK4EChannelClient({
 					sophonClient: sophon,
 					gameDir: selection,
 					installReltype: releaseType,
+					expectedBytes: INSTALL_SIZE_BYTES,
 				});
 				// setGameInstalled
 				batch(() => {

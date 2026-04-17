@@ -42,14 +42,18 @@ pub async fn apply_patch(
     p_offset: i64,
     p_length: i64,
     dst_file: &Path,
+    tempdir: &Path,
 ) -> Result<()> {
     let patch_file = patch_file.to_path_buf();
     let old_file = old_file.to_path_buf();
     let dst_file = dst_file.to_path_buf();
+    let tempdir = tempdir.to_path_buf();
     let hpatchz = hpatchz_path();
 
     tokio::task::spawn_blocking(move || -> Result<()> {
-        // Extract patch slice to a named temp file.
+        // Extract patch slice to a named temp file on the caller-supplied
+        // tempdir (SSD), avoiding HDD thrash when the game lives on an
+        // external/slow drive.
         let mut src = std::fs::File::open(&patch_file)
             .with_context(|| format!("open patch {}", patch_file.display()))?;
         src.seek(SeekFrom::Start(p_offset as u64))?;
@@ -57,7 +61,8 @@ pub async fn apply_patch(
         src.read_exact(&mut patch_slice)
             .context("read patch slice")?;
 
-        let mut tmp = tempfile::NamedTempFile::new().context("create temp patch file")?;
+        let mut tmp = tempfile::NamedTempFile::new_in(&tempdir)
+            .with_context(|| format!("create temp patch file in {}", tempdir.display()))?;
         tmp.write_all(&patch_slice)?;
         tmp.flush()?;
 
