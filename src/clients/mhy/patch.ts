@@ -100,7 +100,7 @@ export async function* patchProgram(
   );
 
   // winemetal.dll also to system32 for both native and builtin
-  await cp(`./dxmt/winemetal.dll`, join(system32Dir, "winemetal.dll"));
+  await cp(`./dxmt/i386-windows/winemetal.dll`, join(system32Dir, "winemetal.dll"));
 
   if (config.reshade) {
     await cp(resolve("./reshade/dxgi.dll"), join(gameDir, "dxgi.dll"));
