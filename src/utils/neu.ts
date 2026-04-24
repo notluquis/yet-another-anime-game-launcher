@@ -447,19 +447,67 @@ export async function shutdown() {
 export async function _safeRelaunch() {
   await shutdown();
   if (import.meta.env.PROD) {
+    let appPath: string | undefined;
+
     try {
-      // Try to get app name from config
+      // Method 1: Try to find the running .app from process (most reliable)
+      const result = await exec([
+        "lsof",
+        "-p",
+        "$$",
+        "-a",
+        "-d",
+        "cwd",
+        "-n",
+        "-b",
+      ]);
+      // This will show current directory, use as fallback location
+    } catch {
+      // Continue to next method
+    }
+
+    try {
+      // Method 2: Get from config globalVariables (fallback location)
       const config = await Neutralino.app.getConfig();
-      let appName = config?.title || "Yaagl OS";
-      // Ensure we have a valid app name
-      if (!appName || appName.length === 0) {
-        appName = "Yaagl OS";
+      if (config.globalVariables?.appPath) {
+        appPath = config.globalVariables.appPath;
+      } else if (config.globalVariables?.appName) {
+        appPath = `/Applications/${config.globalVariables.appName}.app`;
       }
-      await Neutralino.os.execCommand(`open -a "${appName}"`, {
+    } catch {
+      // Continue to fallback
+    }
+
+    // Method 3: Use standard locations in order
+    if (!appPath) {
+      const standardPaths = [
+        "/Applications/Yaagl OS.app",
+        "/Applications/Yaagl.app",
+        process.env.HOME + "/Applications/Yaagl OS.app",
+      ];
+
+      for (const path of standardPaths) {
+        try {
+          await stats(path);
+          appPath = path;
+          break;
+        } catch {
+          // Try next path
+        }
+      }
+    }
+
+    // Fallback: use app name via open -a
+    if (!appPath) {
+      appPath = "Yaagl OS";
+    }
+
+    try {
+      await Neutralino.os.execCommand(`open "${appPath}"`, {
         background: true,
       });
-    } catch (e) {
-      // Fallback to hardcoded if config retrieval fails
+    } catch {
+      // If path open fails, try by name
       await Neutralino.os.execCommand(`open -a "Yaagl OS"`, {
         background: true,
       });
