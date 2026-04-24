@@ -447,9 +447,23 @@ export async function shutdown() {
 export async function _safeRelaunch() {
   await shutdown();
   if (import.meta.env.PROD) {
-    await Neutralino.os.execCommand(`open -a "Yaagl OS"`, {
-      background: true,
-    });
+    try {
+      // Try to get app name from config
+      const config = await Neutralino.app.getConfig();
+      let appName = config?.title || "Yaagl OS";
+      // Ensure we have a valid app name
+      if (!appName || appName.length === 0) {
+        appName = "Yaagl OS";
+      }
+      await Neutralino.os.execCommand(`open -a "${appName}"`, {
+        background: true,
+      });
+    } catch (e) {
+      // Fallback to hardcoded if config retrieval fails
+      await Neutralino.os.execCommand(`open -a "Yaagl OS"`, {
+        background: true,
+      });
+    }
   } else {
     Neutralino.app.restartProcess();
   }
