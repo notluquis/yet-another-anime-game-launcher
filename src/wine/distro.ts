@@ -16,16 +16,6 @@ export interface WineDistribution {
 
 const YAAGL_BUILTIN_WINE: WineDistribution[] = [
   {
-    id: "11.7-dxmt",
-    displayName: "Wine 11.7 DXMT",
-    remoteUrl:
-      "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.7/wine-devel-11.7-osx64.tar.xz",
-    attributes: {
-      renderBackend: "dxmt",
-      winePath: "Wine Devel.app/Contents/Resources/wine",
-    },
-  },
-  {
     id: "11.4-dxmt-signed",
     displayName: "Wine 11.4 DXMT (signed)",
     remoteUrl:

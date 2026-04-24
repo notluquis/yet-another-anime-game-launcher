@@ -29,7 +29,7 @@ const DXMT_FILES_WITH_UNIXLIB = [
   "nvngx.dll",
 ];
 
-const CURRENT_DXMT_VERSION = "0.80.0";
+const CURRENT_DXMT_VERSION = "0.74.0";
 
 export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   if (
@@ -44,9 +44,9 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   await rmrf_dangerously(resolve(`./dxmt`));
   await mkdirp("./dxmt");
   yield ["setStateText", "DOWNLOADING_ENVIRONMENT"];
-  const archiveName = "dxmt-v0.80-builtin.tar.gz";
+  const archiveName = "dxmt-v0.74-builtin-signed.tar.xz";
   for await (const progress of aria2.doStreamingDownload({
-    uri: `https://github.com/3Shain/dxmt/releases/download/v0.80/${archiveName}`,
+    uri: `https://github.com/dawn-winery/dawn-signed/releases/download/dxmt-v0.74-builtin-signed/${archiveName}`,
     absDst: resolve(`./dxmt/${archiveName}`),
   })) {
     yield [
@@ -62,18 +62,28 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
 
   yield ["setStateText", "EXTRACT_ENVIRONMENT"];
   yield ["setUndeterminedProgress"];
-  // Extract and flatten: tar contains v0.80/ at root, strip it to get the architecture directories
   await exec([
     "tar",
-    "-xzf",
+    "-xvf",
     resolve(`./dxmt/${archiveName}`),
     "-C",
     resolve("./dxmt"),
-    "--strip-components=1",
   ]);
-  // Clean up any intermediate directories that might have been created
-  await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.80-builtin`));
-  await rmrf_dangerously(resolve(`./dxmt/v0.80`));
+  await exec([
+    "sh",
+    "-c",
+    `mv "${resolve(
+      "./dxmt/dxmt-v0.74-builtin-signed/x86_64-windows/"
+    )}"* "${resolve("./dxmt/")}"`,
+  ]);
+  await exec([
+    "sh",
+    "-c",
+    `mv "${resolve(
+      "./dxmt/dxmt-v0.74-builtin-signed/x86_64-unix/"
+    )}"* "${resolve("./dxmt/")}"`,
+  ]);
+  await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.74-builtin-signed`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
   await setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
 

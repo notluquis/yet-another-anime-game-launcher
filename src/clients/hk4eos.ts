@@ -16,8 +16,8 @@ import {
 } from "./secret";
 
 export const DEFAULT_WINE_DISTRO_URL =
-  "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.7/wine-devel-11.7-osx64.tar.xz";
-export const DEFAULT_WINE_DISTRO_TAG = "11.7-dxmt";
+  "https://github.com/dawn-winery/dawn-signed/releases/download/wine-gcenx-11.4-osx64/wine-devel-11.4-osx64-signed.tar.xz";
+export const DEFAULT_WINE_DISTRO_TAG = "11.4-dxmt-signed";
 
 const SERVER_DEFINITION: Server = {
   id: "hk4e_global",
