@@ -29,7 +29,7 @@ const DXMT_FILES_WITH_UNIXLIB = [
   "nvngx.dll",
 ];
 
-const CURRENT_DXMT_VERSION = "0.74.0";
+const CURRENT_DXMT_VERSION = "0.80.0";
 
 export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   if (
@@ -44,9 +44,9 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   await rmrf_dangerously(resolve(`./dxmt`));
   await mkdirp("./dxmt");
   yield ["setStateText", "DOWNLOADING_ENVIRONMENT"];
-  const archiveName = "dxmt-v0.74-builtin-signed.tar.xz";
+  const archiveName = "dxmt-v0.80-builtin.tar.gz";
   for await (const progress of aria2.doStreamingDownload({
-    uri: `https://github.com/dawn-winery/dawn-signed/releases/download/dxmt-v0.74-builtin-signed/${archiveName}`,
+    uri: `https://github.com/3Shain/dxmt/releases/download/v0.80/${archiveName}`,
     absDst: resolve(`./dxmt/${archiveName}`),
   })) {
     yield [
@@ -73,17 +73,17 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
     "sh",
     "-c",
     `mv "${resolve(
-      "./dxmt/dxmt-v0.74-builtin-signed/x86_64-windows/"
+      "./dxmt/dxmt-v0.80-builtin/x86_64-windows/"
     )}"* "${resolve("./dxmt/")}"`,
   ]);
   await exec([
     "sh",
     "-c",
     `mv "${resolve(
-      "./dxmt/dxmt-v0.74-builtin-signed/x86_64-unix/"
+      "./dxmt/dxmt-v0.80-builtin/x86_64-unix/"
     )}"* "${resolve("./dxmt/")}"`,
   ]);
-  await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.74-builtin-signed`));
+  await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.80-builtin`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
   await setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
 
