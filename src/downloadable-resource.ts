@@ -45,13 +45,20 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   await mkdirp("./dxmt");
   yield ["setStateText", "DOWNLOADING_ENVIRONMENT"];
   const archiveName = "dxmt-v0.80-builtin.tar.gz";
-  await exec([
-    "curl",
-    "-L",
-    "-o",
-    resolve(`./dxmt/${archiveName}`),
-    `https://github.com/3Shain/dxmt/releases/download/v0.80/${archiveName}`,
-  ]);
+  for await (const progress of aria2.doStreamingDownload({
+    uri: `https://github.com/3Shain/dxmt/releases/download/v0.80/${archiveName}`,
+    absDst: resolve(`./dxmt/${archiveName}`),
+  })) {
+    yield [
+      "setProgress",
+      Number((progress.completedLength * BigInt(100)) / progress.totalLength),
+    ];
+    yield [
+      "setStateText",
+      "DOWNLOADING_ENVIRONMENT_SPEED",
+      `${humanFileSize(Number(progress.downloadSpeed))}`,
+    ];
+  }
 
   yield ["setStateText", "EXTRACT_ENVIRONMENT"];
   yield ["setUndeterminedProgress"];
