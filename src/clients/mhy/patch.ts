@@ -76,7 +76,7 @@ export async function* patchProgram(
       if (await fileOrDirExists(system32File)) {
         await forceMove(system32File, system32File + ".bak");
       }
-      await cp(`./dxmt/${f}`, system32File);
+      await cp(`./dxmt/i386-windows/${f}`, system32File);
     }
   } else {
     for (const f of DXMT_FILES) {
@@ -84,18 +84,18 @@ export async function* patchProgram(
       if (await fileOrDirExists(wineLibPath)) {
         await forceMove(wineLibPath, wineLibPath + ".bak");
       }
-      await cp(`./dxmt/${f}`, wineLibPath);
+      await cp(`./dxmt/x86_64-windows/${f}`, wineLibPath);
     }
   }
 
   // winemetal files always go to Wine lib directories
   await cp(
-    `./dxmt/winemetal.dll`,
+    `./dxmt/x86_64-windows/winemetal.dll`,
     resolve("./wine/lib/wine/x86_64-windows/winemetal.dll")
   );
 
   await cp(
-    `./dxmt/winemetal.so`,
+    `./dxmt/x86_64-unix/winemetal.so`,
     resolve("./wine/lib/wine/x86_64-unix/winemetal.so")
   );
 
