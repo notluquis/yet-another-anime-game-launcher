@@ -180,12 +180,19 @@ export async function* patchRevertProgram(
     );
     if (isNativeDXMT) {
       for (const f of DXMT_FILES) {
-        await forceMove(join(system32Dir, f + ".bak"), join(system32Dir, f));
+        const system32File = join(system32Dir, f);
+        const bakFile = system32File + ".bak";
+        if (await fileOrDirExists(bakFile)) {
+          await forceMove(bakFile, system32File);
+        }
       }
     } else {
       for (const f of DXMT_FILES) {
         const wineLibPath = resolve(`./wine/lib/wine/x86_64-windows/${f}`);
-        await forceMove(wineLibPath + ".bak", wineLibPath);
+        const bakFile = wineLibPath + ".bak";
+        if (await fileOrDirExists(bakFile)) {
+          await forceMove(bakFile, wineLibPath);
+        }
       }
     }
   }
