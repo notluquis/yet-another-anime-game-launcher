@@ -444,12 +444,45 @@ export async function shutdown() {
   }
 }
 
+async function getAppBundleName(): Promise<string> {
+  try {
+    // Try to find the .app bundle name from the running process
+    // ps aux shows the app path, we extract the .app name from it
+    const result = await Neutralino.os.execCommand(
+      `ps -o args= -p $$ | grep -oE '/Applications/[^ ]+\\.app' | xargs basename`,
+      {}
+    );
+    const appName = result.stdOut.trim();
+    if (appName && appName.endsWith(".app")) {
+      return appName.slice(0, -4); // Remove .app extension
+    }
+  } catch {
+    // Fall through to default
+  }
+
+  // Fallback to environment or default
+  try {
+    const appName = (globalThis as any).NL_APPID || "Yaagl OS";
+    return appName;
+  } catch {
+    return "Yaagl OS";
+  }
+}
+
 export async function _safeRelaunch() {
   await shutdown();
   if (import.meta.env.PROD) {
-    await Neutralino.os.execCommand(`open -a "Yaagl OS"`, {
-      background: true,
-    });
+    try {
+      const appName = await getAppBundleName();
+      await Neutralino.os.execCommand(`open -a "${appName}"`, {
+        background: true,
+      });
+    } catch (e) {
+      // Fallback if app name detection fails
+      await Neutralino.os.execCommand(`open -a "Yaagl OS"`, {
+        background: true,
+      });
+    }
   } else {
     Neutralino.app.restartProcess();
   }
