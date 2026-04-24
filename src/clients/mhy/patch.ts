@@ -72,13 +72,18 @@ export async function* patchProgram(
   );
   if (isNativeDXMT) {
     for (const f of DXMT_FILES) {
-      await forceMove(join(system32Dir, f), join(system32Dir, f + ".bak"));
-      await cp(`./dxmt/${f}`, join(system32Dir, f));
+      const system32File = join(system32Dir, f);
+      if (await fileOrDirExists(system32File)) {
+        await forceMove(system32File, system32File + ".bak");
+      }
+      await cp(`./dxmt/${f}`, system32File);
     }
   } else {
     for (const f of DXMT_FILES) {
       const wineLibPath = resolve(`./wine/lib/wine/x86_64-windows/${f}`);
-      await forceMove(wineLibPath, wineLibPath + ".bak");
+      if (await fileOrDirExists(wineLibPath)) {
+        await forceMove(wineLibPath, wineLibPath + ".bak");
+      }
       await cp(`./dxmt/${f}`, wineLibPath);
     }
   }
