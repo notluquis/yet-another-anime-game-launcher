@@ -132,9 +132,7 @@ cd /d "${wine.toWinePath(gameDir)}"
       );
     }
 
-    const useNativeDlls = !(
-      wine.attributes.renderBackend == "dxmt" && gt("0.74.0", dxmtVersion)
-    );
+    const useNativeDlls = wine.attributes.renderBackend == "dxmt" && gt("0.74.0", dxmtVersion);
     await wine.exec2(
       config.steamPatch ? "C:\\windows\\system32\\steam.exe" : "cmd",
       config.steamPatch
