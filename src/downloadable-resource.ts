@@ -64,7 +64,7 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
   yield ["setUndeterminedProgress"];
   await exec([
     "tar",
-    "-xvf",
+    "-xzf",
     resolve(`./dxmt/${archiveName}`),
     "-C",
     resolve("./dxmt"),
@@ -74,16 +74,22 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
     "-c",
     `mv "${resolve(
       "./dxmt/dxmt-v0.80-builtin/x86_64-windows/"
-    )}"* "${resolve("./dxmt/")}"`,
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
+      "./dxmt/x86_64-windows/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
   ]);
   await exec([
     "sh",
     "-c",
     `mv "${resolve(
       "./dxmt/dxmt-v0.80-builtin/x86_64-unix/"
-    )}"* "${resolve("./dxmt/")}"`,
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
+      "./dxmt/x86_64-unix/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
   ]);
   await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.80-builtin`));
+  await rmrf_dangerously(resolve(`./dxmt/x86_64-windows`));
+  await rmrf_dangerously(resolve(`./dxmt/x86_64-unix`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
   await setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
 
