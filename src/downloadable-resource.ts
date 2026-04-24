@@ -62,51 +62,18 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
 
   yield ["setStateText", "EXTRACT_ENVIRONMENT"];
   yield ["setUndeterminedProgress"];
+  // Extract and flatten: tar contains v0.80/ at root, strip it to get the architecture directories
   await exec([
     "tar",
     "-xzf",
     resolve(`./dxmt/${archiveName}`),
     "-C",
     resolve("./dxmt"),
+    "--strip-components=1",
   ]);
-  await exec([
-    "sh",
-    "-c",
-    `mv "${resolve(
-      "./dxmt/dxmt-v0.80-builtin/x86_64-windows/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
-      "./dxmt/v0.80/x86_64-windows/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
-      "./dxmt/x86_64-windows/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
-  ]);
-  await exec([
-    "sh",
-    "-c",
-    `mv "${resolve(
-      "./dxmt/dxmt-v0.80-builtin/x86_64-unix/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
-      "./dxmt/v0.80/x86_64-unix/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
-      "./dxmt/x86_64-unix/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
-  ]);
-  await exec([
-    "sh",
-    "-c",
-    `mv "${resolve(
-      "./dxmt/dxmt-v0.80-builtin/i386-windows/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
-      "./dxmt/v0.80/i386-windows/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
-      "./dxmt/i386-windows/"
-    )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
-  ]);
+  // Clean up any intermediate directories that might have been created
   await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.80-builtin`));
   await rmrf_dangerously(resolve(`./dxmt/v0.80`));
-  await rmrf_dangerously(resolve(`./dxmt/x86_64-windows`));
-  await rmrf_dangerously(resolve(`./dxmt/x86_64-unix`));
-  await rmrf_dangerously(resolve(`./dxmt/i386-windows`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
   await setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
 
