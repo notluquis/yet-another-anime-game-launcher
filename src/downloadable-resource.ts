@@ -75,6 +75,8 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
     `mv "${resolve(
       "./dxmt/dxmt-v0.80-builtin/x86_64-windows/"
     )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
+      "./dxmt/v0.80/x86_64-windows/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
       "./dxmt/x86_64-windows/"
     )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
   ]);
@@ -84,12 +86,27 @@ export async function* checkAndDownloadDXMT(aria2: Aria2): CommonUpdateProgram {
     `mv "${resolve(
       "./dxmt/dxmt-v0.80-builtin/x86_64-unix/"
     )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
+      "./dxmt/v0.80/x86_64-unix/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
       "./dxmt/x86_64-unix/"
     )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
   ]);
+  await exec([
+    "sh",
+    "-c",
+    `mv "${resolve(
+      "./dxmt/dxmt-v0.80-builtin/i386-windows/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
+      "./dxmt/v0.80/i386-windows/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || mv "${resolve(
+      "./dxmt/i386-windows/"
+    )}"* "${resolve("./dxmt/")}" 2>/dev/null || true`,
+  ]);
   await rmrf_dangerously(resolve(`./dxmt/dxmt-v0.80-builtin`));
+  await rmrf_dangerously(resolve(`./dxmt/v0.80`));
   await rmrf_dangerously(resolve(`./dxmt/x86_64-windows`));
   await rmrf_dangerously(resolve(`./dxmt/x86_64-unix`));
+  await rmrf_dangerously(resolve(`./dxmt/i386-windows`));
   await removeFile(resolve(`./dxmt/${archiveName}`));
   await setKey("installed_dxmt_version", CURRENT_DXMT_VERSION);
 
