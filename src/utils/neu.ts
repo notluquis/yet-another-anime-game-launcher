@@ -446,15 +446,12 @@ export async function shutdown() {
 
 export async function _safeRelaunch() {
   await shutdown();
-  // await wait(1000);
-  // HACK
   if (import.meta.env.PROD) {
-    const app = await Neutralino.os.getEnv("PATH_LAUNCH");
-    await Neutralino.os.execCommand(`open "${app}"`, {
+    await Neutralino.os.execCommand(`open -a "Yaagl OS"`, {
       background: true,
     });
-    Neutralino.app.exit(0);
   } else {
     Neutralino.app.restartProcess();
   }
+  Neutralino.app.exit(0);
 }
